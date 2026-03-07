@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { computeKeywordHeatmap } from './keyword-heatmap';
 import type { TieredKeyword } from './keyword-heatmap';
-import type { StructuredResume } from '@repo/types';
+import { applyConstraints } from './apply-constraints';
+import { truncateField } from './truncate';
+import type { StructuredResume, TemplateContract } from '@repo/types';
 
 // ─── Fixture ─────────────────────────────────────────────────────────────────
 
@@ -29,10 +31,112 @@ const BASE_RESUME: StructuredResume = {
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
+// ─── applyConstraints / truncateField fixtures ────────────────────────────────
+
+const STRICT_CONTRACT: TemplateContract = {
+  name: 'test-strict',
+  fields: {
+    name:                     { maxChars: 10,  strategy: 'trim'     },
+    headline:                 { maxChars: 20,  strategy: 'ellipsis' },
+    summary:                  { maxChars: 30,  strategy: 'ellipsis' },
+    'experience[].title':     { maxChars: 10,  strategy: 'trim'     },
+    'experience[].company':   { maxChars: 10,  strategy: 'trim'     },
+    'experience[].bullets[]': { maxChars: 20,  strategy: 'ellipsis' },
+    'education[].degree':     { maxChars: 15,  strategy: 'trim'     },
+    skills:                   { maxLines: 1,   strategy: 'collapse' },
+  },
+};
+
 describe('layout-prep', () => {
-  it.todo('applyConstraints: truncates summary to maxChars with ellipsis strategy');
-  it.todo('applyConstraints: sets hadTruncation=true and populates truncatedFields');
-  it.todo('applyConstraints: no-ops when all fields are within limits');
+  describe('truncateField', () => {
+    it('trim strategy cuts at maxChars exactly', () => {
+      const result = truncateField('Hello World', { maxChars: 5, strategy: 'trim' });
+      expect(result).toBe('Hello');
+      expect(result.length).toBe(5);
+    });
+
+    it('ellipsis strategy appends … and total length equals maxChars', () => {
+      const result = truncateField('Hello World', { maxChars: 6, strategy: 'ellipsis' });
+      expect(result).toBe('Hello\u2026');
+      expect(result.length).toBe(6);
+    });
+
+    it('returns value unchanged when within limit', () => {
+      const value = 'Short';
+      expect(truncateField(value, { maxChars: 100, strategy: 'trim' })).toBe(value);
+      expect(truncateField(value, { maxChars: 100, strategy: 'ellipsis' })).toBe(value);
+    });
+
+    it('returns value unchanged when maxChars is undefined', () => {
+      const value = 'Any string at all';
+      expect(truncateField(value, { strategy: 'trim' })).toBe(value);
+    });
+  });
+
+  describe('applyConstraints', () => {
+    it('truncates summary to maxChars with ellipsis strategy', () => {
+      const longSummary = 'A'.repeat(100);
+      const resume: StructuredResume = { ...BASE_RESUME, summary: longSummary };
+      const { resume: out } = applyConstraints(resume, STRICT_CONTRACT);
+      expect(out.summary.length).toBe(30);
+      expect(out.summary.endsWith('\u2026')).toBe(true);
+    });
+
+    it('sets hadTruncation=true and populates truncatedFields when truncation occurs', () => {
+      const resume: StructuredResume = { ...BASE_RESUME, summary: 'A'.repeat(100) };
+      const { metadata } = applyConstraints(resume, STRICT_CONTRACT);
+      expect(metadata.hadTruncation).toBe(true);
+      expect(metadata.truncatedFields).toContain('summary');
+      expect(metadata.truncationDetails).toBeDefined();
+      expect(metadata.truncationDetails!['summary'].originalLength).toBe(100);
+      expect(metadata.truncationDetails!['summary'].maxLength).toBe(30);
+    });
+
+    it('no-ops when all fields are within limits', () => {
+      // BASE_RESUME has very short fields — use a permissive contract
+      const permissive: TemplateContract = {
+        name: 'permissive',
+        fields: {
+          name:     { maxChars: 200, strategy: 'trim' },
+          headline: { maxChars: 200, strategy: 'trim' },
+          summary:  { maxChars: 200, strategy: 'trim' },
+        },
+      };
+      const { resume: out, metadata } = applyConstraints(BASE_RESUME, permissive);
+      expect(metadata.hadTruncation).toBe(false);
+      expect(metadata.truncatedFields).toHaveLength(0);
+      expect(out.summary).toBe(BASE_RESUME.summary);
+      expect(out.name).toBe(BASE_RESUME.name);
+    });
+
+    it('truncates experience bullets with ellipsis', () => {
+      const longBullet = 'B'.repeat(50);
+      const resume: StructuredResume = {
+        ...BASE_RESUME,
+        experience: [{ ...BASE_RESUME.experience[0], bullets: [longBullet] }],
+      };
+      const { resume: out, metadata } = applyConstraints(resume, STRICT_CONTRACT);
+      expect(out.experience[0].bullets[0].length).toBe(20);
+      expect(out.experience[0].bullets[0].endsWith('\u2026')).toBe(true);
+      expect(metadata.truncatedFields).toContain('experience[0].bullets[0]');
+    });
+
+    it('does not mutate the input resume', () => {
+      const resume: StructuredResume = { ...BASE_RESUME, summary: 'A'.repeat(100) };
+      const originalSummary = resume.summary;
+      applyConstraints(resume, STRICT_CONTRACT);
+      expect(resume.summary).toBe(originalSummary);
+    });
+
+    it('collapses skills list when total exceeds maxLines * 80 chars', () => {
+      // maxLines=1 → budget=80 chars; each skill ~10 chars + 4 separator = 14 per skill after first
+      const manySkills = Array.from({ length: 20 }, (_, i) => `Skill-${i.toString().padStart(2, '0')}`);
+      const resume: StructuredResume = { ...BASE_RESUME, skills: manySkills };
+      const { resume: out, metadata } = applyConstraints(resume, STRICT_CONTRACT);
+      expect(out.skills.length).toBeLessThan(manySkills.length);
+      expect(metadata.truncatedFields).toContain('skills');
+    });
+  });
 
   describe('computeKeywordHeatmap', () => {
     // ── Original todo — now implemented ──────────────────────────────────────
@@ -242,6 +346,4 @@ describe('layout-prep', () => {
     });
   });
 
-  it.todo('truncateField: trim strategy cuts at maxChars');
-  it.todo('truncateField: ellipsis strategy appends … at maxChars-1');
 });
