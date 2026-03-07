@@ -7,11 +7,13 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "redraft": "tsx packages/core/src/ai/redraft.ts"
   },
   "devDependencies": {
     "eslint": "^8.57.0",
     "prettier": "^3.2.5",
+    "tsx": "^4.19.2",
     "turbo": "^2.8.14"
   },
   "packageManager": "pnpm@8.15.6"

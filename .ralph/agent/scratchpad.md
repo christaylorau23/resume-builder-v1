@@ -52,3 +52,16 @@ Phase 2 shifts from operator-owned credentials to user-owned credentials. Two au
 1. Create specs/byom-auth/ directory with auth-flow.md
 2. Update architecture.md to add BYOM section
 3. (Future tasks) Wire credentials into redraft.ts and canva client
+
+## 2026-03-07 — BYOM Arch Docs Complete
+
+Updated `_bmad-output/planning-artifacts/architecture.md` with a new
+"Phase 2: BYOM Credential Injection" section covering:
+- CredentialProvider interface + three implementations (Env/Session/Static)
+- Credential resolution priority order
+- Canva OAuth 2.0 sequence (Path B)
+- Security invariants
+- Error codes → PipelineWarning mapping
+- Location-in-project table
+
+All BYOM documentation tasks closed. Objective satisfied.

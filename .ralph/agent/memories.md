@@ -2,6 +2,10 @@
 
 ## Patterns
 
+### mem-1772918150-34ad
+> applyConstraints field path patterns: name/headline/summary are simple strings; experience[].title, experience[].company, experience[].bullets[] use array index; education[].degree per-entry; skills uses maxLines*80 char budget
+<!-- tags: layout-prep, constraints | created: 2026-03-07 -->
+
 ## Decisions
 
 ## Fixes

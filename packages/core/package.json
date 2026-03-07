@@ -13,6 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.78.0",
     "@repo/types": "workspace:*",
     "pdfkit": "^0.17.2"
   },

@@ -1,8 +1,8 @@
 # Loop Summary
 
 **Status:** Completed successfully
-**Iterations:** 1
-**Duration:** 9m 3s
+**Iterations:** 2
+**Duration:** 4m 53s
 
 ## Tasks
 
@@ -14,4 +14,4 @@ _No events recorded._
 
 ## Final Commit
 
-d6b8591: feat(core): implement PDFKit renderer with Tagged PDF/UA and ATS tests
+c90c798: docs(architecture): add Phase 2 BYOM credential injection section
