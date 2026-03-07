@@ -1,0 +1,4 @@
+
+> @repo/ui@0.0.0 lint /home/christ/ai-factory/projects/resume-builder-v1/packages/ui
+> eslint "**/*.ts"
+

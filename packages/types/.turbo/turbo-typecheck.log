@@ -1,0 +1,4 @@
+
+> @repo/types@0.0.1 typecheck /home/christ/ai-factory/projects/resume-builder-v1/packages/types
+> tsc --noEmit
+

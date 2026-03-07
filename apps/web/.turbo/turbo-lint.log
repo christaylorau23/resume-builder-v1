@@ -1,0 +1,4 @@
+
+> web@0.0.0 lint /home/christ/ai-factory/projects/resume-builder-v1/apps/web
+> eslint "src/**/*.ts"
+

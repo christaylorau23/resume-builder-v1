@@ -1,0 +1,17 @@
+
+> @repo/core@0.0.1 test /home/christ/ai-factory/projects/resume-builder-v1/packages/core
+> vitest run
+
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+
+ RUN  v2.1.9 /home/christ/ai-factory/projects/resume-builder-v1/packages/core
+
+ ✓ src/layout-prep/layout-prep.test.ts (21 tests | 5 skipped) 7ms
+ ✓ __tests__/pipeline.integration.test.ts (6 tests | 4 skipped) 95ms
+ ✓ src/rendering/pdf/build-pdf.test.ts (7 tests) 145ms
+
+ Test Files  3 passed (3)
+      Tests  25 passed | 9 todo (34)
+   Start at  11:59:28
+   Duration  466ms (transform 117ms, setup 0ms, collect 358ms, tests 247ms, environment 0ms, prepare 148ms)
+

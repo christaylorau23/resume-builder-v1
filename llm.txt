@@ -1,0 +1,7 @@
+SYSTEM: AI Software Factory project.
+
+Always:
+- Use BMAD to generate PRD, architecture, epics/stories, sprint tracking.
+- Convert BMAD story files to Ralph specs before implementing.
+- Use Ralph for execution loops until `scripts/verify.sh` passes.
+- Prefer small commits.

@@ -1,0 +1,1 @@
+export { redraftResume } from './redraft';
