@@ -60,7 +60,191 @@ h1 {
   padding: 2em;
 }
 
+.settings .setting-group {
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+.settings .setting-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+}
+.setting-hint {
+  font-size: 0.875rem;
+  color: #888;
+  margin-top: 0.5rem;
+}
+.settings .setting-heading {
+  font-size: 1rem;
+  margin: 1rem 0 0.25rem;
+  font-weight: 600;
+}
+.settings .setting-heading:first-child {
+  margin-top: 0;
+}
+.settings .setting-description {
+  font-size: 0.9rem;
+  color: #888;
+  margin-bottom: 0.5rem;
+}
+.settings .setting-details {
+  margin-top: 0.75rem;
+  text-align: left;
+}
+.settings .token-steps {
+  margin: 0.5rem 0;
+  padding-left: 1.25rem;
+}
+.canva-status {
+  margin-left: 0.5rem;
+  font-size: 0.9rem;
+  color: #0a0;
+}
+.settings .button-link {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #646cff;
+  background: transparent;
+  color: #646cff;
+  text-decoration: none;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+.settings .button-link:hover {
+  background: rgba(100, 108, 255, 0.1);
+}
+.settings .button-secondary {
+  margin-left: 0.5rem;
+  font-size: 0.9rem;
+}
+.target-market-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+.toggle-btn {
+  min-width: 5rem;
+}
+.toggle-btn.active {
+  border-color: #646cff;
+  background-color: rgba(100, 108, 255, 0.15);
+}
+.settings input[type="password"] {
+  width: 100%;
+  max-width: 24rem;
+  padding: 0.5rem 0.75rem;
+  margin-right: 0.5rem;
+  margin-top: 0.25rem;
+  border-radius: 6px;
+  border: 1px solid #444;
+  font-family: inherit;
+}
+.settings .token-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+.settings .button-primary {
+  border-color: #646cff;
+  background-color: rgba(100, 108, 255, 0.2);
+}
+.settings .button-primary:hover {
+  background-color: rgba(100, 108, 255, 0.3);
+}
+.settings #paste-save-token,
+.settings #save-token,
+.settings #clear-token {
+  margin-right: 0;
+}
+
 .read-the-docs {
+  color: #888;
+}
+
+/* Pipeline: Generate Resume */
+.pipeline {
+  text-align: left;
+}
+.pipeline-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.pipeline-tab {
+  min-width: 6rem;
+}
+.pipeline-tab.active {
+  border-color: #646cff;
+  background-color: rgba(100, 108, 255, 0.15);
+}
+.pipeline textarea.pipeline-textarea {
+  width: 100%;
+  min-height: 8em;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #444;
+  font-family: inherit;
+  resize: vertical;
+}
+.pipeline textarea.pipeline-textarea-json {
+  font-family: ui-monospace, monospace;
+  font-size: 0.9rem;
+}
+.pipeline-url-wrap {
+  width: 100%;
+}
+.pipeline input.pipeline-url-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #444;
+  font-family: inherit;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+.pipeline-hint {
+  font-size: 0.875rem;
+  color: #888;
+  margin: 0.5rem 0;
+}
+.pipeline-run-btn {
+  margin-top: 0.5rem;
+}
+.pipeline-run-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.pipeline-status {
+  margin-top: 1rem;
+  font-size: 0.95rem;
+}
+.pipeline-error {
+  color: #e55;
+}
+.pipeline-results {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #444;
+}
+.pipeline-result-item {
+  margin-bottom: 0.5rem;
+}
+.pipeline-result-item a {
+  margin-right: 0.5rem;
+}
+.pipeline-result-sep {
+  margin: 0 0.5rem;
+  color: #888;
+}
+.pipeline-warnings {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+  color: #c90;
+}
+.pipeline-heatmap {
+  font-size: 0.9rem;
   color: #888;
 }
 

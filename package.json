@@ -2,19 +2,24 @@
   "name": "resume-builder-v1",
   "private": true,
   "scripts": {
+    "verify:pipeline": "tsx packages/core/src/pipeline/verify-identity.ts",
     "build": "turbo run build",
     "dev": "turbo run dev",
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "redraft": "tsx packages/core/src/ai/redraft.ts"
+    "redraft": "tsx packages/core/src/ai/redraft.ts",
+    "notify": "tsx scripts/notify.ts",
+    "notify:test": "tsx scripts/notify.ts --test 'Test connection successful.'"
   },
   "devDependencies": {
+    "dotenv": "^16.4.5",
     "eslint": "^8.57.0",
     "prettier": "^3.2.5",
     "tsx": "^4.19.2",
-    "turbo": "^2.8.14"
+    "turbo": "^2.8.14",
+    "undici": "^7.22.0"
   },
   "packageManager": "pnpm@8.15.6"
 }

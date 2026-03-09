@@ -6,16 +6,59 @@ import { join } from 'path';
 const pdfParse = require('pdf-parse/lib/pdf-parse.js') as (
   buf: Buffer,
 ) => Promise<{ numpages: number; text: string }>;
-import { _makePipelineResult } from '../src/pipeline/run-pipeline';
+import { runPipeline, _makePipelineResult } from '../src/pipeline/run-pipeline';
 import { buildPdf } from '../src/rendering/pdf/build-pdf';
 import { computeKeywordHeatmap } from '../src/layout-prep/keyword-heatmap';
 import { CANONICAL_RESUME, CANONICAL_JD_KEYWORDS } from './fixtures/canonical-resume';
 
 describe('pipeline integration', () => {
-  it.todo('runPipeline: returns PipelineResult with pdf buffer on success');
-  it.todo('runPipeline: pdf is always present even when Canva fails');
-  it.todo('runPipeline: Canva failure adds CANVA_EXPORT_FAILED warning, not an exception');
-  it.todo('runPipeline: layoutPrep.hadTruncation is false when no fields exceed limits');
+  it('runPipeline: returns PipelineResult with pdf buffer on success', async () => {
+    const result = await runPipeline({ structuredResume: CANONICAL_RESUME });
+    expect(result.pdf).toBeInstanceOf(Buffer);
+    expect(result.pdf.length).toBeGreaterThan(0);
+    expect(result.layoutPrep).toBeDefined();
+    expect(result.layoutPrep.keywordHeatmap).toBeDefined();
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('runPipeline: pdf is always present even when Canva fails', async () => {
+    const result = await runPipeline(
+      { structuredResume: CANONICAL_RESUME },
+      { canvaCredentials: { clientId: 'test', accessToken: 'invalid-token' } }
+    );
+    expect(result.pdf).toBeInstanceOf(Buffer);
+    expect(result.pdf.length).toBeGreaterThan(0);
+    expect(result.warnings).toHaveLength(1);
+    expect(result.warnings[0].code).toBe('CANVA_EXPORT_FAILED');
+  });
+
+  it('runPipeline: Canva failure adds CANVA_EXPORT_FAILED warning, not an exception', async () => {
+    const result = await runPipeline(
+      { structuredResume: CANONICAL_RESUME },
+      { canvaCredentials: { clientId: 'test', accessToken: 'invalid' } }
+    );
+    expect(result.warnings.some((w) => w.code === 'CANVA_EXPORT_FAILED')).toBe(true);
+    expect(result.pdf.length).toBeGreaterThan(0);
+  });
+
+  it('runPipeline: with canvaTemplateId uses provider path, returns pdf and warning on invalid creds', async () => {
+    const result = await runPipeline(
+      { structuredResume: CANONICAL_RESUME },
+      {
+        canvaCredentials: { clientId: 'test', accessToken: 'invalid' },
+        canvaTemplateId: 'DAHDdekK5YA',
+      }
+    );
+    expect(result.pdf).toBeInstanceOf(Buffer);
+    expect(result.pdf.length).toBeGreaterThan(0);
+    expect(result.canva).toBeUndefined();
+    expect(result.warnings.some((w) => w.code === 'CANVA_EXPORT_FAILED')).toBe(true);
+  });
+
+  it('runPipeline: layoutPrep.hadTruncation is false when no fields exceed limits', async () => {
+    const result = await runPipeline({ structuredResume: CANONICAL_RESUME });
+    expect(result.layoutPrep.hadTruncation).toBe(false);
+  });
 
   // Shape contract test — verifies PipelineResult interface is correctly assembled.
   it('_makePipelineResult: assembles a valid PipelineResult shape', () => {

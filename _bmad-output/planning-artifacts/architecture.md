@@ -18,6 +18,8 @@ _This document builds collaboratively through step-by-step discovery. Sections a
 
 ## Project Context Analysis
 
+_(Refreshed from PRD and project-context for scope refinement.)_
+
 ### Architectural Priority (Experience MVP)
 
 The PRD defines an **Experience MVP**: the product only exists if it can consistently deliver a human-grade PDF on the user's phone while they're on the go. Architecture must therefore **prioritize**:
@@ -26,13 +28,39 @@ The PRD defines an **Experience MVP**: the product only exists if it can consist
 2. **Perfect Spacing reliability** — Strict layout rules so PDF has no widows, orphans, or awkward white space; output must look human-crafted every time. The layout engine is deterministic and testable; content/layout separation is non-negotiable (project-context and PRD). PDF must use searchable text (no flattening) for 100% ATS readability.
 3. **Shared core for consistency** — One content pipeline and one layout engine for both CLI and Web so output quality and Perfect Spacing are identical; no duplicate layout or content logic.
 
-Post-MVP capabilities (multiple Canva templates, enhanced ATS scoring, richer Web UI, shell completion, full browser automation) must not drive architectural decisions that compromise the above.
+Post-MVP capabilities must not drive architectural decisions that compromise the above (see Scope Boundaries).
+
+### Scope Boundaries
+
+**In scope (MVP):**
+
+- **iOS-friendly web (PWA):** Delivered as a Progressive Web App for "Liquid Glass"–style UX on iPhone; JD input (paste or URL) with **Paste JD fallback** when URL fetch fails (non-negotiable). The "brain" (pipeline, layout-prep, heatmap, PDF) remains in Turborepo; no client-side redraft duplication.
+- **Profile / Target Market:** Manual "Target Market" toggle (US vs AU) on the web UI that sets the contact phone number before redraft (US: 424-388-9521, AU: 0403 905 751). Single `contact.phone` in StructuredResume; no schema change.
+- **Identity Injection (Identity Pillars):** Three locked values are injected into the redraft so the LLM never hallucinates them. **(1) Static defaults in core:** Name = `Chris Taylor`, Email = `christaylorau23@gmail.com` (hardcoded in core configuration). **(2) Phone logic:** US/AU toggle provides 424-388-9521 (US) or 0403 905 751 (AU) to the prompt orchestrator; `runPipeline(input)` accepts `profile.targetMarket` or `profile.phone` and resolves full identity via `resolveIdentityPillars(profile)`. **(3) Prompt constraints:** System instructions for the redraft must strictly use these three Identity Pillars without modification; they are passed verbatim into the redraft step.
+- JD-to-Markdown AI redrafting (single JD per run); ATS keyword extraction and natural weaving; structured output (JSON/Markdown) as single source for layout and export.
+- One resume template with **Perfect Spacing** (strict layout rules; no widows/orphans).
+- Local PDF from same source; searchable text only for ATS.
+- **One** Canva template via API with defined mapping and length limits.
+- Shared core: one content pipeline + one layout engine for Web and CLI.
+- Config: `.env` for API keys (`ANTHROPIC_API_KEY`, `CANVA_CLIENT_ID`, `CANVA_CLIENT_SECRET`, `CANVA_TEMPLATE_ID`); `config.json` for template preferences. The backend owns the Anthropic key — no per-user credential injection needed (single-user personal tool).
+- Performance: end-to-end under 3 minutes; Web TTI ≤ 2s on mobile 5G.
+- CLI: interactive and non-interactive; PDF and Canva output; Markdown/JSON for debugging/piping.
+
+**Explicitly out of MVP (PRD):**
+
+- Shell completion; multiple Canva templates; enhanced ATS scoring; full browser/LinkedIn automation.
+- **Native iOS app** (Swift/SwiftUI, Xcode, App Store). Deferred to avoid App Store review, logic duplication, and deployment friction for the 48–72 hour job-application target; PWA satisfies mobile experience.
+
+**Post-MVP (Growth / Vision):**
+
+- Phase 2: Multiple Canva templates; enhanced ATS keyword scoring; richer Web UI; optional shell completion.
+- Phase 3: Full browser automation (e.g. paste LinkedIn JD URL → one click → PDF + Canva ready).
 
 ### Requirements Overview
 
 **Functional Requirements (28 total):**
 
-- **JD Input & Ingestion (5):** Web paste and URL submit; fallback to paste when URL fails (non-negotiable on mobile). CLI file/inline/URL. Optional path: structured JSON/Markdown in without re-running AI.
+- **JD Input & Ingestion (5):** Web paste and URL submit; fallback to paste when URL fails (non-negotiable on mobile). CLI file/inline/URL. Optional path: structured JSON/Markdown in without re-running AI (FR5).
 - **Content Generation / AI (4):** Single-JD → ATS-optimized resume; keyword extraction and natural weaving; structured output (JSON/Markdown) as single source for layout and export.
 - **Layout & Formatting (3):** Strict layout rules (no widows/orphans); one high-impact template; content length limits and truncation so layout never overflows (PDF + Canva).
 - **PDF Generation (2):** Local PDF from structured content; searchable text only (no flattening) for ATS. Web download and CLI file output.
@@ -61,6 +89,20 @@ Post-MVP capabilities (multiple Canva templates, enhanced ATS scoring, richer We
 - **Data:** In-memory or short-lived storage; no long-term retention in MVP.
 - **Canva:** Official API only; one template in MVP with explicit mapping and length limits; timeout/error handling so PDF is still delivered if Canva fails.
 - **Config:** `.env` for secrets; `config.json` for template/Canva IDs; shared where applicable to avoid drift.
+
+### Identity Injection (Identity Pillars)
+
+To ensure the H&M Sydney (and all) applications are correctly tailored, the following identity constants are locked and injected into the pipeline:
+
+| Pillar | Source | Value(s) |
+|--------|--------|----------|
+| **Name** | Static default in core | `Chris Taylor` (hardcoded; never overridden) |
+| **Email** | Static default in core | `christaylorau23@gmail.com` (hardcoded; never overridden) |
+| **Phone** | Target Market (US/AU) or explicit | US: `424-388-9521`, AU: `0403 905 751` |
+
+- **Pipeline contract:** `PipelineInput` includes optional `profile` with `targetMarket` (US or AU) or explicit `phone`. Core resolves full identity via `resolveIdentityPillars(profile)` (see `packages/core/src/identity-defaults.ts`). Name and email are always the static defaults; phone is from `profile.phone` or derived from `profile.targetMarket`.
+- **Redraft injection:** The `redraftResume` step MUST receive the resolved `IdentityPillars` and inject them into the system instructions verbatim. The LLM must be instructed to use exactly these three values for the candidate name, email, and phone without modification or hallucination.
+- **Web/CLI:** Web sends `profile.targetMarket` (or `profile.phone`) from the Target Market toggle; CLI may pass `profile.targetMarket` or `profile.phone` via config or flags. Both ultimately flow into `runPipeline(input)`.
 
 ### Cross-Cutting Concerns Identified
 
@@ -573,15 +615,19 @@ No file under `rendering/` may import from `layout-prep/` for the purpose of run
 
 ## Architecture Validation Results
 
+_(Re-run after Project Context / scope refinement. Validated against refreshed PRD scope boundaries.)_
+
 ### Coherence Validation ✅
 
-**Decision compatibility:** Technology choices align: Turborepo + Vite (web), Oclif (CLI), PDFKit (tagged PDF), Node in core. No conflicting versions or patterns. Pipeline result shape, layout-prep metadata, and Canva isolation are consistent across decisions.
+**Decision compatibility:** Technology choices align: Turborepo + Vite (web), Oclif (CLI), PDFKit (tagged PDF), Node in core. No conflicting versions or patterns. Pipeline result shape, layout-prep metadata, and Canva isolation are consistent across decisions. Scope boundaries (MVP in/out) do not conflict with any decision.
 
 **Pattern consistency:** Naming (camelCase, kebab-case, UPPER_SNAKE for codes), structure (layout-prep vs rendering boundary), and Shared Core API pattern support the architecture. Single headless entry point (`runPipeline`) is enforced in structure and boundaries.
 
 **Structure alignment:** Project tree supports all decisions: `packages/core` has layout-prep (logic) and rendering (PDF/Canva) physically separated; `packages/types` prevents drift; apps depend only on core and types.
 
 ### Requirements Coverage Validation ✅
+
+**Scope alignment:** Refreshed Project Context Analysis includes explicit Scope Boundaries (in scope MVP, out of MVP, post-MVP). Architecture supports only in-scope MVP features; no structural commitments to shell completion, multiple Canva templates, or full browser automation.
 
 **Functional requirements:** All 28 FRs have a defined location: JD input (ingest + Web/CLI), AI redraft (ai/), layout-prep including keyword heatmap (layout-prep/), template contract (contract/), PDF (rendering/pdf/), Canva (rendering/canva/), pipeline (pipeline/), Web SPA (apps/web), CLI (apps/cli), config (env + config.json), shared core (packages/core single entry).
 
@@ -605,14 +651,14 @@ No file under `rendering/` may import from `layout-prep/` for the purpose of run
 
 ### Gap Analysis Results
 
-- **Critical:** None. All blocking decisions and structure are in place.
+- **Critical:** None. All blocking decisions and structure are in place; scope refinement did not introduce gaps.
 - **Important:** Optional: schema validation (JSON schema for resume) and keyword extraction from JD (if not done in AI step) for the heatmap input. Can be implemented in first iteration.
-- **Nice-to-have:** Future: multiple templates, enhanced ATS scoring; already deferred in scope.
+- **Nice-to-have:** Future: multiple templates, enhanced ATS scoring, shell completion, full browser automation; explicitly out of MVP per Scope Boundaries.
 
 ### Architecture Completeness Checklist
 
 **✅ Requirements analysis**
-- [x] Project context thoroughly analyzed
+- [x] Project context thoroughly analyzed (refreshed with scope boundaries)
 - [x] Scale and complexity assessed
 - [x] Technical constraints identified
 - [x] Cross-cutting concerns mapped
@@ -641,11 +687,11 @@ No file under `rendering/` may import from `layout-prep/` for the purpose of run
 
 **Overall status:** READY FOR IMPLEMENTATION
 
-**Confidence level:** High — validation confirms coherence, requirements coverage, single entry point, and Keyword Heatmap in layout-prep.
+**Confidence level:** High — validation confirms coherence, requirements coverage (including refreshed scope), single entry point, and Keyword Heatmap in layout-prep.
 
-**Key strengths:** Experience MVP priority; clear layout-prep vs rendering boundary; standardized PipelineResult with layoutPrep metadata; Canva never blocks PDF; shared types package; headless core.
+**Key strengths:** Experience MVP priority; explicit Scope Boundaries (in/out of MVP); clear layout-prep vs rendering boundary; standardized PipelineResult with layoutPrep metadata; Canva never blocks PDF; shared types package; headless core.
 
-**Areas for future enhancement:** Multiple Canva templates; enhanced ATS scoring; shell completion; full browser automation (post-MVP).
+**Areas for future enhancement (out of MVP):** Multiple Canva templates; enhanced ATS scoring; shell completion; full browser automation.
 
 ### Implementation Handoff
 
@@ -653,134 +699,72 @@ No file under `rendering/` may import from `layout-prep/` for the purpose of run
 - Follow all architectural decisions exactly as documented.
 - Use implementation patterns consistently (PipelineResult, layoutPrep, Canva isolation, naming).
 - Respect project structure and boundaries; do not export layout-prep or rendering from core except via runPipeline.
+- Refer to **Scope Boundaries** in Project Context Analysis for in/out of MVP; do not implement out-of-MVP features as part of core structure.
 - Refer to this document for all architectural questions.
 
 **First implementation priority:** Initialize repo with `npx create-turbo@latest -e with-vite`; add `packages/types` and `packages/core` with the directory structure above; implement `runPipeline` as the single headless entry; then add `apps/cli` (Oclif) and `apps/web` (Vite) as thin consumers. Run `scripts/verify.sh` before claiming done.
 
 ---
 
-## Phase 2: BYOM Credential Injection
+## Credential Strategy
 
-> **Spec:** `specs/byom-auth/auth-flow.md` (Approved for implementation)
+> **Spec:** `specs/byom-auth/auth-flow.md`
 
-Phase 2 shifts credential ownership from the system operator to the end user
-(Bring Your Own Model). Instead of shared backend API keys in `.env`, each user
-supplies their own Anthropic and Canva credentials. The pipeline resolves
-credentials through a `CredentialProvider` interface; no credential logic is
-hard-coded in pipeline or rendering code.
+This is a **single-user personal tool**. The backend owns the Anthropic API key.
+No per-user credential injection, no session tokens, no credential UI beyond Canva OAuth.
 
-### Auth Paths
-
-| Path | Persona | Anthropic | Canva |
-|------|---------|-----------|-------|
-| **API Key** | Power user / CLI (Sam) | API key from `console.anthropic.com` | Canva Connect API key |
-| **Personal Subscription** | Mobile / Web (Jordan) | API key from `console.anthropic.com`\* | Canva OAuth 2.0 (Authorization Code) |
-
-> \* Anthropic does not currently expose an OAuth endpoint for personal Claude.ai
-> subscriptions. Both paths use an API key; the distinction is billing model only.
-
-### CredentialProvider Interface
-
-Defined in `packages/types/src/credentials.ts`:
-
-```typescript
-export interface AnthropicCredentials {
-  apiKey: string;
-}
-
-export interface CanvaCredentials {
-  /** Path A: service-to-service API key */
-  apiKey?: string;
-  clientId: string;
-  /** Path B: OAuth access token */
-  accessToken?: string;
-  /** Path B: OAuth refresh token (server-side only) */
-  refreshToken?: string;
-}
-
-export interface CredentialProvider {
-  getAnthropic(): Promise<AnthropicCredentials>;
-  getCanva(): Promise<CanvaCredentials>;
-}
-```
-
-Implementations:
-- **`EnvCredentialProvider`** — reads from `process.env`; used by CLI (Path A).
-- **`SessionCredentialProvider`** — reads from server-side session store; used by Web (Path A and B).
-- **`StaticCredentialProvider`** — accepts explicit values; used in tests only.
-
-### Credential Resolution Order
-
-The pipeline resolves credentials in this priority order (highest to lowest):
+### Anthropic
 
 ```
-1. Explicit per-request credential (programmatic / test)
-2. Web session store (Path B OAuth tokens or Path A key entered in UI)
-3. Environment variable (ANTHROPIC_API_KEY, CANVA_API_KEY, CANVA_CLIENT_ID)
-4. .env file (loaded at startup via dotenv; gitignored)
-5. Error: MissingCredentialError → surfaces to user with setup instructions
+ANTHROPIC_API_KEY=sk-ant-...   ← apps/api/.env (gitignored) or hosting env vars
 ```
 
-### Canva OAuth 2.0 Flow (Path B — Personal Subscription)
+- `redraftResume` reads the key from `process.env.ANTHROPIC_API_KEY` at call time.
+- Model: **`claude-sonnet-4-6`** — best instruction-following and structured JSON output
+  for ATS-calibrated resume writing. Do not substitute Haiku for redraft.
+- Cost at personal-use volume (a few applications/week): < $3/year.
+
+### Canva OAuth 2.0
+
+Canva requires user-level OAuth for personal account access. This is unchanged.
 
 ```
 1. [Web UI]   User clicks "Connect Canva"
-2. [Backend]  Build Canva OAuth URL
-                scope:       design:content:write design:meta:read
-                state:       CSRF token (server-generated, stored in session)
-                redirect_uri: https://<app-host>/auth/canva/callback
-3. [Browser]  Redirect → https://www.canva.com/api/oauth/authorize?...
-4. [Canva]    User reviews permissions → clicks "Allow"
-5. [Canva]    Redirect → /auth/canva/callback?code=<auth_code>&state=<csrf>
-6. [Backend]  Validate CSRF state (reject if mismatch)
-              POST https://api.canva.com/rest/v1/oauth/token
-                grant_type=authorization_code, code, client_id,
-                client_secret, redirect_uri
-7. [Canva]    Returns { access_token, refresh_token, expires_in, token_type }
-8. [Backend]  Store tokens in server-side session ONLY (never in client cookie body)
-9. [Web UI]   Show "Canva connected"; pipeline now has a token for this session
+2. [Backend]  Build Canva OAuth URL (scope: design:content:write design:meta:read)
+              CSRF state token stored in session
+3. [Browser]  Redirect → Canva OAuth authorize endpoint
+4. [Canva]    User allows → redirect to /auth/canva/callback?code=...&state=...
+5. [Backend]  Validate CSRF; exchange code for tokens
+6. [Backend]  Store access_token + refresh_token in server-side session ONLY
+7. [Web UI]   Show "Canva connected"
 
-Token Refresh (if access_token expires during pipeline run):
-              POST https://api.canva.com/rest/v1/oauth/token
-                grant_type=refresh_token, refresh_token,
-                client_id, client_secret
+Token Refresh: backend auto-refreshes access_token before pipeline runs if expired.
 ```
 
 ### Security Invariants
 
-- API keys and OAuth tokens are **never logged**, never embedded in build artifacts, and never sent to the client in a readable cookie or response body.
-- `client_secret` is a server-side secret; never exposed to the browser.
-- CSRF state token is validated before any token exchange.
-- Token scope is minimal: `design:content:write design:meta:read` only.
-- Session lifetime: tokens expire with the session (no long-term DB persistence in MVP).
-- HTTPS required for redirect_uri in production.
+- `ANTHROPIC_API_KEY` never logged, never in client assets, never in API responses.
+- Canva tokens stored in server-side session only; never sent to the client.
+- All secrets in `.env` (gitignored) or hosting platform environment.
+- HTTPS required in production.
 
 ### Error Codes → Pipeline Warnings
 
-All Canva credential failures result in a `PipelineWarning` (per the existing Canva isolation rule — PDF delivery is never blocked).
+| Condition | Code | Handling |
+|-----------|------|----------|
+| `ANTHROPIC_API_KEY` not set | `MISSING_ANTHROPIC_KEY` | API returns 500; check server env |
+| Anthropic 401 | `INVALID_ANTHROPIC_KEY` | API returns 500; check key |
+| Canva OAuth cancelled | `CANVA_OAUTH_CANCELLED` | PipelineWarning; PDF still delivered |
+| Canva token exchange failed | `CANVA_TOKEN_EXCHANGE_FAILED` | PipelineWarning; PDF still delivered |
+| Canva token refresh failed | `CANVA_TOKEN_REFRESH_FAILED` | PipelineWarning; PDF still delivered |
 
-| Condition | Code | User-facing message |
-|-----------|------|---------------------|
-| No Anthropic key | `MISSING_ANTHROPIC_KEY` | "Add your Anthropic API key in Settings." |
-| Anthropic key invalid (401) | `INVALID_ANTHROPIC_KEY` | "Anthropic API key rejected. Check your key in Settings." |
-| Canva OAuth cancelled | `CANVA_OAUTH_CANCELLED` | "Canva connection cancelled. Connect Canva to enable export." |
-| Canva token exchange failed | `CANVA_TOKEN_EXCHANGE_FAILED` | "Canva connection failed. Please try again." |
-| Canva token refresh failed | `CANVA_TOKEN_REFRESH_FAILED` | "Canva session expired. Reconnect Canva in Settings." |
-| No Canva credentials (API key path) | `MISSING_CANVA_KEY` | "Add your Canva API key in Settings to enable export." |
+**Canva failures never block PDF delivery** — Canva isolation rule is unchanged.
 
 ### Location in Project Structure
 
 | File | Responsibility |
 |------|---------------|
-| `packages/types/src/credentials.ts` | `AnthropicCredentials`, `CanvaCredentials`, `CredentialProvider` interface |
-| `packages/core/src/ai/redraft.ts` | Calls `credentialProvider.getAnthropic()` at call time |
-| `packages/core/src/rendering/canva/export-canva.ts` | Calls `credentialProvider.getCanva()` at call time |
-| `apps/web/src/api/run-pipeline.ts` | Constructs `SessionCredentialProvider` from request session |
-| `apps/cli/src/lib/run-pipeline.ts` | Constructs `EnvCredentialProvider` from `process.env` |
-
-### Out of Scope for Phase 2
-
-- Multi-user account system / database-persisted tokens
-- Anthropic OAuth (not yet available from Anthropic)
-- Canva token rotation beyond session lifetime
-- Rate limiting / quota enforcement per user (Phase 3)
+| `apps/api/.env` | `ANTHROPIC_API_KEY`, `CANVA_CLIENT_ID`, `CANVA_CLIENT_SECRET`, `CANVA_TEMPLATE_ID` |
+| `packages/core/src/ai/redraft.ts` | Reads `process.env.ANTHROPIC_API_KEY`; calls Anthropic Messages API |
+| `apps/api/src/canva-oauth.ts` | Canva OAuth flow (unchanged) |
+| `apps/api/src/index.ts` | Passes `canvaCredentials` from session into `runPipeline` |

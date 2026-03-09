@@ -70,8 +70,11 @@ Content optimization (ATS) and visual design (Canva) are usually separate; this 
 
 ### MVP – Minimum Viable Product
 
-- **iOS-friendly web interface** for JD input (paste or URL).
-- **JD-to-Markdown AI redrafting** from that input.
+- **iOS-friendly web (PWA):** Progressive Web App for installable, "Liquid Glass"–style UX on iPhone. No native iOS app (Swift/Xcode/App Store); PWA avoids App Store review and deployment friction for the 48–72 hour job-application target.
+- **Web interface** for JD input (paste or URL) with Paste JD fallback.
+- **Target Market toggle:** Manual US vs AU selection on the web UI; sets contact phone (US: 424-388-9521, AU: 0403 905 751) before redraft. Single `contact.phone` in output; no schema change.
+- **Identity pillars (locked):** Static defaults in core: name = **Chris Taylor**, email = **christaylorau23@gmail.com** (never hallucinated by the LLM). Phone from US/AU toggle (424-388-9521 or 0403 905 751) is wired into the prompt orchestrator. System instructions for the BYOM (Claude Pro) redraft must strictly use these three Identity Pillars without modification; they are injected verbatim into the redraft step via `runPipeline(input.profile)`.
+- **JD-to-Markdown AI redrafting** from that input using `claude-sonnet-4-6` via a backend-owned `ANTHROPIC_API_KEY` (env var). No per-user credential injection — the tool is a single-user personal tool; API cost at personal-use volume is negligible (< $3/year).
 - **"Perfect Spacing" logic** for a single, high-impact resume template (strict layout rules; human-crafted look).
 - **Local PDF generation** from the same source (JSON/Markdown).
 - **One fixed Canva template** populated via API with accurate text placement.
@@ -139,6 +142,14 @@ Rules for ATS keyword extraction and data-to-Canva mapping so content and layout
   - The system **truncates or summarizes** content that exceeds those limits (e.g. trim with ellipsis, or collapse extra bullets into "Key points: …") so the Canva layout never breaks. Rules are explicit and consistent so output is predictable.
 - **Formatting parity:** Where the PDF uses strict layout rules (e.g. LaTeX-style spacing or print CSS), the Canva mapping respects equivalent constraints (line count, paragraph length) so the **same content** looks "human-crafted" in both PDF and Canva, with no manual reformatting after export.
 
+### Identity Injection and Prompt Constraints
+
+To ensure applications (e.g. H&M Sydney) are correctly tailored, three **Identity Pillars** are locked and injected into the redraft:
+
+- **Static defaults (core):** Name = **Chris Taylor**, Email = **christaylorau23@gmail.com**. These are hardcoded in core configuration and never overridden so the LLM does not hallucinate them.
+- **Phone logic:** US/AU toggle provides **424-388-9521** (US) or **0403 905 751** (AU) to the prompt orchestrator; `runPipeline(input)` accepts `profile.targetMarket` or `profile.phone` and resolves full identity before calling the redraft step.
+- **Prompt constraints:** The system instructions for the `redraftResume` step MUST strictly use these three Identity Pillars without modification. The redraft step receives resolved `IdentityPillars` (from `resolveIdentityPillars(profile)`) and injects them verbatim into the system prompt so the model uses exactly these values for the candidate name, email, and phone.
+
 ### Technical Constraints (light)
 
 - **Resume/JD data:** Processed in memory or short-lived storage; no long-term retention required for MVP. User data (JD + generated resume) is not shared beyond the PDF/Canva export paths they choose.
@@ -194,8 +205,11 @@ Dual interface optimized for an iOS, high-speed factory workflow: **CLI** for th
 
 | Area | Requirement |
 |------|-------------|
+| **PWA** | Delivered as a Progressive Web App (manifest + service worker) so the app is installable and feels app-like on iPhone; "brain" (pipeline, layout-prep, PDF) remains in Turborepo backend. |
 | **SPA vs MPA** | SPA (Single-Page App) for the fastest "iOS notification → resume" experience; no full page reloads. |
-| **Browser / devices** | Primary: iOS Safari (mobile-first). Desktop secondary. |
+| **Browser / devices** | Primary: iOS Safari (mobile-first). Desktop secondary. No native iOS app in MVP. |
+| **Profile / Target Market** | "Target Market" control (US vs AU) that sets contact phone number before redraft (US: 424-388-9521, AU: 0403 905 751). Value stored in UI state or minimal profile; included in redraft request context as `profile.targetMarket`. |
+| **Identity pillars** | Static defaults: name = Chris Taylor, email = christaylorau23@gmail.com (core config). Phone from toggle. Prompt constraints: redraft system instructions must use these three pillars verbatim without modification. |
 | **Performance** | End-to-end target **under 3 minutes** for the full loop (paste → PDF/Canva) to allow high-reasoning AI. UI must be interactive: **TTI ≤ 2 seconds** on a mobile 5G connection. |
 | **Accessibility** | Minimum bar: high contrast and large touch targets for on-the-fly use on iPhone. |
 
@@ -227,7 +241,7 @@ Dual interface optimized for an iOS, high-speed factory workflow: **CLI** for th
 - Config: `.env` for API keys; `config.json` for template/Canva IDs.
 - Performance: end-to-end under 3 minutes; Web TTI ≤2s on mobile 5G.
 
-**Explicitly out of MVP:** Shell completion, multiple Canva templates, enhanced ATS scoring, full browser/LinkedIn automation.
+**Explicitly out of MVP:** Shell completion, multiple Canva templates, enhanced ATS scoring, full browser/LinkedIn automation. **Native iOS app** (Swift/SwiftUI, Xcode, App Store) deferred; PWA satisfies mobile experience for 48–72 hour target.
 
 ### Post-MVP Features
 
@@ -293,7 +307,7 @@ Dual interface optimized for an iOS, high-speed factory workflow: **CLI** for th
 
 ### Configuration
 
-- **FR26:** User can configure API keys (e.g. Anthropic, Canva) without hardcoding (e.g. via environment or .env).
+- **FR26:** API keys (`ANTHROPIC_API_KEY`, `CANVA_CLIENT_ID`, `CANVA_CLIENT_SECRET`) are configured server-side via environment variables or `.env` (gitignored); never hardcoded, never sent to the client.
 - **FR27:** User can configure template preferences and Canva template ID (e.g. via config file).
 
 ### Shared Core
