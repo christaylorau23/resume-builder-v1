@@ -1,0 +1,18 @@
+{
+  "name": "Resume Builder",
+  "short_name": "Resume Builder",
+  "description": "JD to ATS-optimized resume and PDF in under 3 minutes",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#242424",
+  "theme_color": "#646cff",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

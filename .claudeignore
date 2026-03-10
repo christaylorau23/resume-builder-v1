@@ -1,0 +1,10 @@
+# Keep secrets and local config out of agent context (prevents accidental use/commit)
+.env
+.env.*
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Obsidian vault path — uncomment and set if your vault lives inside this repo
+# Obsidian/

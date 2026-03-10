@@ -1,0 +1,9 @@
+# Normalize line endings to LF (prevents CRLF from breaking scripts in WSL)
+* text=auto eol=lf
+
+# Bash scripts must stay LF so verify.sh and other gates run correctly
+*.sh text eol=lf
+*.bash text eol=lf
+
+# Docs
+*.md text eol=lf

@@ -41,3 +41,6 @@ pnpm-debug.log*
 __pycache__/
 .venv/
 .pytest_cache/
+
+# temp / scratch
+tmp-*.txt
