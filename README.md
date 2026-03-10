@@ -53,3 +53,4 @@ The Canva API is free for this integration. To export resumes to Canva:
 2. Set `CANVA_CLIENT_ID` and `CANVA_CLIENT_SECRET` in `.env` (see [.env.example](.env.example)). Configure the redirect URI in the Canva app to match your API server (e.g. `http://localhost:3001/auth/canva/callback`).
 3. Run the API server (`pnpm --filter api dev`) and the web app (`pnpm --filter web dev`). Set `VITE_API_URL=http://localhost:3001` for the web app so it can reach the API.
 4. In the web app **Settings**, click **Connect Canva** to sign in with your Canva account. After connecting, pipeline runs can export a design to your Canva account.
+# resume-builder-v1
