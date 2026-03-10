@@ -3,7 +3,7 @@ import "./style.css";
 import typescriptLogo from "/typescript.svg";
 import { Counter } from "@repo/ui/counter";
 import { setupCounter } from "@repo/ui/setup-counter";
-import { renderSettings, attachSettingsListeners, refreshCanvaStatus } from "./settings";
+import { renderSettings, attachSettingsListeners } from "./settings";
 import { renderPipeline, attachPipelineListeners } from "./pipeline";
 
 const app = document.querySelector<HTMLDivElement>("#app")!;
@@ -26,7 +26,4 @@ app.innerHTML = `
 
 attachSettingsListeners(app);
 attachPipelineListeners(app);
-if (typeof window !== 'undefined' && window.location.search.includes('canva=')) {
-  refreshCanvaStatus();
-}
 setupCounter(document.querySelector<HTMLButtonElement>("#counter")!);

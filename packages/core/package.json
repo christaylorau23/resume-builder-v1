@@ -9,8 +9,7 @@
       "types": "./src/index.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
-    },
-    "./credentials": "./src/credentials/index.ts"
+    }
   },
   "scripts": {
     "build": "tsc",
@@ -20,7 +19,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
     "@repo/types": "workspace:*",
-    "pdfkit": "^0.17.2"
+    "pdfkit": "^0.17.2",
+    "puppeteer": "^22.15.0"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",

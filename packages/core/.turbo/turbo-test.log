@@ -6,25 +6,23 @@
 
  RUN  v2.1.9 /home/christ/ai-factory/projects/resume-builder-v1/packages/core
 
- ✓ src/layout-prep/layout-prep.test.ts (26 tests) 20ms
- ✓ __tests__/ai-redraft-orchestrator.test.ts (25 tests) 14ms
-stdout | __tests__/pipeline.integration.test.ts > pipeline integration > runPipeline: pdf is always present even when Canva fails
-Injecting Chris Taylor identity into Canva Template: (new design)
+ ✓ src/layout-prep/layout-prep.test.ts (26 tests) 48ms
+ ✓ __tests__/ai-redraft-orchestrator.test.ts (25 tests) 32ms
+ ✓ __tests__/extract-jd-keywords.test.ts (4 tests) 11ms
+ ✓ src/rendering/pdf/build-pdf.test.ts (7 tests) 533ms
+stderr | __tests__/pipeline.integration.test.ts > pipeline integration > runPipeline: visual PDF failure adds VISUAL_PDF_FAILED warning, not an exception
+[renderVisualPdf] failed: Failed to launch the browser process!
+/home/christ/.cache/puppeteer/chrome/linux-127.0.6533.88/chrome-linux64/chrome: error while loading shared libraries: libnss3.so: cannot open shared object file: No such file or directory
 
- ✓ src/rendering/pdf/build-pdf.test.ts (7 tests) 216ms
-stdout | __tests__/pipeline.integration.test.ts > pipeline integration > runPipeline: Canva failure adds CANVA_EXPORT_FAILED warning, not an exception
-Injecting Chris Taylor identity into Canva Template: (new design)
 
-stdout | __tests__/pipeline.integration.test.ts > pipeline integration > runPipeline: with canvaTemplateId uses provider path, returns pdf and warning on invalid creds
-Injecting Chris Taylor identity into Canva Template: DAHDdekK5YA
+TROUBLESHOOTING: https://pptr.dev/troubleshooting
 
- ✓ __tests__/pipeline.integration.test.ts (7 tests) 1422ms
-   ✓ pipeline integration > runPipeline: pdf is always present even when Canva fails 382ms
-   ✓ pipeline integration > runPipeline: Canva failure adds CANVA_EXPORT_FAILED warning, not an exception 347ms
-   ✓ pipeline integration > runPipeline: with canvaTemplateId uses provider path, returns pdf and warning on invalid creds 562ms
 
- Test Files  4 passed (4)
-      Tests  65 passed (65)
-   Start at  11:59:29
-   Duration  2.07s (transform 307ms, setup 0ms, collect 723ms, tests 1.67s, environment 1ms, prepare 344ms)
+ ✓ __tests__/pipeline.integration.test.ts (7 tests) 1479ms
+   ✓ pipeline integration > runPipeline: visual PDF failure adds VISUAL_PDF_FAILED warning, not an exception 935ms
+
+ Test Files  5 passed (5)
+      Tests  69 passed (69)
+   Start at  05:50:04
+   Duration  2.90s (transform 628ms, setup 0ms, collect 1.67s, tests 2.10s, environment 2ms, prepare 874ms)
 

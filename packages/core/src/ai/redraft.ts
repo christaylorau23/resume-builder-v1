@@ -13,8 +13,17 @@
  */
 import Anthropic from '@anthropic-ai/sdk';
 import type { IdentityPillars, StructuredResume } from '@repo/types';
+import type { TieredKeyword } from '../layout-prep/keyword-heatmap';
 
 const MODEL = 'claude-sonnet-4-6';
+
+/** ATS rules (see docs/ats-standards-2026.md) — injected into redraft prompt. */
+const ATS_RULES = `
+ATS OPTIMIZATION RULES (must follow):
+- Keyword tiering: Prioritize "Hard" (Tier 1) skills in the Experience and Skills sections.
+- Contextual weaving: Keywords must appear inside result-oriented bullet points (e.g. "Scaled [Tool] to [Metric]"), not as a flat list.
+- Layout: Respect character limits (headline ~40 chars, summary ~600, bullets ~150 each). Do not exceed them.
+- Readability: Keep a natural narrative tone. Do not repeat the same Tier 1 keyword more than 3 times (stuffing hurts ATS in 2026).`;
 
 /** Error thrown by redraftResume with a structured code for API-layer handling. */
 export class RedraftError extends Error {
@@ -30,12 +39,23 @@ export class RedraftError extends Error {
 
 /**
  * Build the system prompt. Identity pillars are injected verbatim — the model is
- * explicitly instructed not to modify them.
+ * explicitly instructed not to modify them. When keywords are provided, the prompt
+ * includes an explicit Hard keyword list and ATS rules from docs/ats-standards-2026.md.
  */
-function buildSystemPrompt(pillars: IdentityPillars): string {
+function buildSystemPrompt(pillars: IdentityPillars, keywords?: TieredKeyword[]): string {
+  const hardKeywordBlock =
+    keywords && keywords.length > 0
+      ? `
+MUST-WEAVE KEYWORDS (from JD extraction): You MUST naturally include these Hard keywords in the resume (headline, summary, experience bullets, and/or skills). Prefer exact phrases from the JD. Do not repeat any Hard keyword more than 3 times.
+Hard keywords: ${keywords.filter((k) => k.tier === 'hard').map((k) => k.term).join(', ') || '(none)'}
+${keywords.some((k) => k.tier === 'alias' || k.tier === 'contextual') ? `Also consider weaving where natural: ${keywords.filter((k) => k.tier !== 'hard').map((k) => k.term).join(', ')}` : ''}
+`
+      : '';
+
   return `You are an expert resume writer specialising in ATS (Applicant Tracking System) optimisation.
 Your task is to rewrite the candidate's resume to target the provided job description.
-
+${ATS_RULES}
+${hardKeywordBlock}
 IDENTITY PILLARS — use these EXACTLY as written. Never alter, invent, or omit them:
   Name:  ${pillars.name}
   Email: ${pillars.email}
@@ -89,6 +109,8 @@ interface StructuredResume {
 /**
  * Redraft a resume from a job description using Anthropic claude-sonnet-4-6.
  * Identity pillars are injected verbatim; the model is constrained to use them unchanged.
+ * When keywords are provided (e.g. from extractJdKeywords), the prompt includes an explicit
+ * list of Hard keywords to weave and ATS rules from docs/ats-standards-2026.md.
  *
  * @throws {RedraftError} with code MISSING_ANTHROPIC_KEY | INVALID_ANTHROPIC_KEY |
  *   ANTHROPIC_RATE_LIMITED | REDRAFT_PARSE_FAILED
@@ -96,6 +118,7 @@ interface StructuredResume {
 export async function redraftResume(
   jd: string,
   pillars: IdentityPillars,
+  keywords?: TieredKeyword[],
 ): Promise<StructuredResume> {
   const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
   if (!apiKey) {
@@ -112,7 +135,7 @@ export async function redraftResume(
     const message = await client.messages.create({
       model: MODEL,
       max_tokens: 2048,
-      system: buildSystemPrompt(pillars),
+      system: buildSystemPrompt(pillars, keywords),
       messages: [
         {
           role: 'user',
@@ -256,14 +279,26 @@ function validateStructuredResume(parsed: unknown, pillars: IdentityPillars): St
   return resume;
 }
 
-/** CLI entry: run via `node .../redraft.js --jd <path> [--market AU|US]`. */
+/**
+ * CLI entry: run via `node .../redraft.js --jd <path> [--market AU|US] [--export pdf]`.
+ *
+ * --export pdf: runs the full pipeline (redraft → layout-prep → ATS PDF + Visual PDF).
+ *   Without --export: prints StructuredResume JSON only (no pipeline, no PDF).
+ */
 export async function redraft() {
   const fs = await import('fs');
   const { resolveIdentityPillars } = await import('../identity-defaults.js');
 
-  const jdPath = process.argv[process.argv.indexOf('--jd') + 1];
-  const marketRaw = process.argv[process.argv.indexOf('--market') + 1] || 'AU';
+  const argv = process.argv;
+  const jdPath = argv[argv.indexOf('--jd') + 1];
+  const marketRaw = argv[argv.indexOf('--market') + 1] || 'AU';
   const market: 'US' | 'AU' = marketRaw === 'US' ? 'US' : 'AU';
+  const exportTarget = argv.includes('--export') ? argv[argv.indexOf('--export') + 1] : null;
+
+  if (!jdPath) {
+    console.error('Usage: pnpm run redraft --jd <path> [--market AU|US] [--export pdf]');
+    process.exit(1);
+  }
 
   console.log(`Starting redraft (Market: ${market})...`);
 
@@ -271,10 +306,28 @@ export async function redraft() {
   const pillars = resolveIdentityPillars({ targetMarket: market });
 
   console.log(`Identity locked: ${pillars.name} | ${pillars.phone}`);
-  console.log('Calling Anthropic...');
 
-  const result = await redraftResume(jdText, pillars);
-  console.log(JSON.stringify(result, null, 2));
+  if (exportTarget === 'pdf') {
+    // Full pipeline path: redraft → ATS PDF + Visual PDF
+    const { runPipeline } = await import('../pipeline/run-pipeline.js');
+    console.log('Calling Anthropic + running full pipeline...');
+
+    const result = await runPipeline({ jd: jdText, profile: { targetMarket: market } });
+
+    console.log('\n--- Pipeline Result ---');
+    if (result.visualPdf) {
+      console.log(`Visual PDF size: ${result.visualPdf.length} bytes`);
+    }
+    if (result.warnings.length) {
+      console.log('Warnings:', JSON.stringify(result.warnings, null, 2));
+    }
+    console.log(`ATS PDF size: ${result.pdf.length} bytes`);
+  } else {
+    // Redraft-only path: print StructuredResume JSON
+    console.log('Calling Anthropic...');
+    const result = await redraftResume(jdText, pillars);
+    console.log(JSON.stringify(result, null, 2));
+  }
 }
 
 // Run CLI only when invoked with --jd (avoids running when imported by runPipeline/tests)

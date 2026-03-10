@@ -53,17 +53,17 @@ export interface KeywordHeatmap {
 
 /**
  * Result returned by every runPipeline call.
- * `pdf` is ALWAYS present on success. `canva` is optional (best-effort).
- * Canva failure MUST NOT block PDF delivery — it only adds a PipelineWarning.
+ * `pdf` is ALWAYS present on success. `visualPdf` is optional (best-effort Puppeteer render).
+ * Visual PDF failure MUST NOT block PDF delivery — it only adds a PipelineWarning.
  */
 export interface PipelineResult {
-  /** PDF buffer — always present when the pipeline completes without a fatal error. */
+  /** ATS PDF buffer (Tagged PDF/UA via PDFKit) — always present on success. */
   pdf: Buffer;
   /** Metadata from the layout-prep (constraint) step. Required on every run. */
   layoutPrep: LayoutPrepMetadata;
-  /** Canva export result — only set when the Canva call succeeded. */
-  canva?: CanvaExportResult;
-  /** Non-fatal issues (e.g. CANVA_EXPORT_FAILED). Canva failure goes here, never blocks pdf. */
+  /** Visual PDF buffer (Puppeteer HTML-to-PDF) — set when render succeeded. */
+  visualPdf?: Buffer;
+  /** Non-fatal issues (e.g. VISUAL_PDF_FAILED). Failure goes here, never blocks pdf. */
   warnings: PipelineWarning[];
 }
 
@@ -98,8 +98,3 @@ export interface PipelineWarning {
   details?: unknown;
 }
 
-/** Result shape for a successful Canva export. */
-export interface CanvaExportResult {
-  designId: string;
-  url?: string;
-}

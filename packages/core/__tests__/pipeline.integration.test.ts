@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { writeFileSync, mkdirSync } from 'fs';
 import { join } from 'path';
 // Import pdf-parse lib directly to avoid the debug-mode file read triggered when module.parent=null
@@ -13,7 +13,8 @@ import { CANONICAL_RESUME, CANONICAL_JD_KEYWORDS } from './fixtures/canonical-re
 
 describe('pipeline integration', () => {
   it('runPipeline: returns PipelineResult with pdf buffer on success', async () => {
-    const result = await runPipeline({ structuredResume: CANONICAL_RESUME });
+    // Skip visual PDF in tests — Puppeteer/Chromium may not be available in CI
+    const result = await runPipeline({ structuredResume: CANONICAL_RESUME }, { visualPdf: false });
     expect(result.pdf).toBeInstanceOf(Buffer);
     expect(result.pdf.length).toBeGreaterThan(0);
     expect(result.layoutPrep).toBeDefined();
@@ -21,43 +22,35 @@ describe('pipeline integration', () => {
     expect(result.warnings).toEqual([]);
   });
 
-  it('runPipeline: pdf is always present even when Canva fails', async () => {
-    const result = await runPipeline(
-      { structuredResume: CANONICAL_RESUME },
-      { canvaCredentials: { clientId: 'test', accessToken: 'invalid-token' } }
-    );
+  it('runPipeline: visual PDF failure adds VISUAL_PDF_FAILED warning, not an exception', async () => {
+    // Chromium may be missing system libs in WSL2/CI — the renderer must never throw
+    const result = await runPipeline({ structuredResume: CANONICAL_RESUME });
     expect(result.pdf).toBeInstanceOf(Buffer);
     expect(result.pdf.length).toBeGreaterThan(0);
-    expect(result.warnings).toHaveLength(1);
-    expect(result.warnings[0].code).toBe('CANVA_EXPORT_FAILED');
+    // Either visual PDF succeeds or a warning is added — never an exception
+    const visualPdfFailed = result.warnings.some((w) => w.code === 'VISUAL_PDF_FAILED');
+    const hasVisualPdf = result.visualPdf !== undefined;
+    expect(visualPdfFailed || hasVisualPdf).toBe(true);
   });
 
-  it('runPipeline: Canva failure adds CANVA_EXPORT_FAILED warning, not an exception', async () => {
-    const result = await runPipeline(
-      { structuredResume: CANONICAL_RESUME },
-      { canvaCredentials: { clientId: 'test', accessToken: 'invalid' } }
-    );
-    expect(result.warnings.some((w) => w.code === 'CANVA_EXPORT_FAILED')).toBe(true);
+  it('runPipeline: visualPdf option false skips Puppeteer render entirely', async () => {
+    const result = await runPipeline({ structuredResume: CANONICAL_RESUME }, { visualPdf: false });
+    expect(result.visualPdf).toBeUndefined();
+    expect(result.warnings.some((w) => w.code === 'VISUAL_PDF_FAILED')).toBe(false);
     expect(result.pdf.length).toBeGreaterThan(0);
-  });
-
-  it('runPipeline: with canvaTemplateId uses provider path, returns pdf and warning on invalid creds', async () => {
-    const result = await runPipeline(
-      { structuredResume: CANONICAL_RESUME },
-      {
-        canvaCredentials: { clientId: 'test', accessToken: 'invalid' },
-        canvaTemplateId: 'DAHDdekK5YA',
-      }
-    );
-    expect(result.pdf).toBeInstanceOf(Buffer);
-    expect(result.pdf.length).toBeGreaterThan(0);
-    expect(result.canva).toBeUndefined();
-    expect(result.warnings.some((w) => w.code === 'CANVA_EXPORT_FAILED')).toBe(true);
   });
 
   it('runPipeline: layoutPrep.hadTruncation is false when no fields exceed limits', async () => {
-    const result = await runPipeline({ structuredResume: CANONICAL_RESUME });
+    const result = await runPipeline({ structuredResume: CANONICAL_RESUME }, { visualPdf: false });
     expect(result.layoutPrep.hadTruncation).toBe(false);
+  });
+
+  it('runPipeline: structuredResume path yields heatmap with score 1 and empty present/missing when no JD', async () => {
+    const result = await runPipeline({ structuredResume: CANONICAL_RESUME }, { visualPdf: false });
+    expect(result.layoutPrep.keywordHeatmap).toBeDefined();
+    expect(result.layoutPrep.keywordHeatmap!.score).toBe(1);
+    expect(result.layoutPrep.keywordHeatmap!.present).toEqual([]);
+    expect(result.layoutPrep.keywordHeatmap!.missing).toEqual([]);
   });
 
   // Shape contract test — verifies PipelineResult interface is correctly assembled.
@@ -70,7 +63,7 @@ describe('pipeline integration', () => {
     expect(result.pdf).toBe(pdf);
     expect(result.layoutPrep.hadTruncation).toBe(false);
     expect(result.warnings).toEqual([]);
-    expect(result.canva).toBeUndefined();
+    expect(result.visualPdf).toBeUndefined();
   });
 
   // AC6 — Output file verification gate

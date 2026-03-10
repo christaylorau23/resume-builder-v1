@@ -9,7 +9,7 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "redraft": "tsx packages/core/src/ai/redraft.ts",
+    "redraft": "tsx --env-file=apps/api/.env packages/core/src/ai/redraft.ts",
     "notify": "tsx scripts/notify.ts",
     "notify:test": "tsx scripts/notify.ts --test 'Test connection successful.'"
   },

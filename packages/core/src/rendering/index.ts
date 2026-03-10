@@ -1,2 +1,2 @@
 export { buildPdf } from './pdf';
-export { exportToCanva } from './canva';
+export { renderVisualPdf, buildHtmlResume } from './html';
