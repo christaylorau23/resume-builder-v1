@@ -1,8 +1,13 @@
-# Railway/Nixpacks: Node 20 + pnpm — skip Puppeteer Chromium download at install time
 [phases.setup]
 nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = [
+  "npm install -g corepack@latest",
+  "corepack enable",
+  "pnpm install --frozen-lockfile"
+]
 
 [variables]
 PUPPETEER_SKIP_DOWNLOAD = "true"
 PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
-COREPACK_INTEGRITY_KEYS = "0"
