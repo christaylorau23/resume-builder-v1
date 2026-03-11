@@ -1,0 +1,6 @@
+# Railway/Nixpacks: Node 20 + pnpm so monorepo build works (railway.toml sets build/start)
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = ["corepack enable", "pnpm install --frozen-lockfile"]
