@@ -5,3 +5,4 @@ nixPkgs = ["nodejs_20"]
 [variables]
 PUPPETEER_SKIP_DOWNLOAD = "true"
 PUPPETEER_SKIP_CHROMIUM_DOWNLOAD = "true"
+COREPACK_INTEGRITY_KEYS = "0"
