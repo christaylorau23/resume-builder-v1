@@ -1,6 +1,7 @@
 # Railway/Nixpacks: Node 20 + pnpm so monorepo build works (railway.toml sets build/start)
+# Install pnpm via npm to avoid Corepack signature verification failure in Nix build env
 [phases.setup]
 nixPkgs = ["nodejs_20"]
 
 [phases.install]
-cmds = ["corepack enable", "pnpm install --frozen-lockfile"]
+cmds = ["npm install -g pnpm@8.15.6", "pnpm install --frozen-lockfile"]
