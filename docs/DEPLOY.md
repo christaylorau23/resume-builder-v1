@@ -30,7 +30,7 @@ Follow these steps in order. All work is done in the Railway and Vercel dashboar
 ## 3. Point API at the frontend (CORS)
 
 1. Back in **Railway** → same service → **Variables**.
-2. Set `FRONTEND_ORIGIN` = the **Vercel URL** from step 2 (exact origin, e.g. `https://resume-builder-xxx.vercel.app`).
+2. Set `FRONTEND_ORIGIN` = the **Vercel URL** from step 2 (exact origin, e.g. `https://resume-builder-xxx.vercel.app`). To allow multiple URLs (e.g. production and preview), use a comma-separated list or set `FRONTEND_ORIGIN_PREVIEW` to the preview URL.
 3. Save; Railway will redeploy. The web app can then call the API without CORS errors.
 
 ## 4. Verify

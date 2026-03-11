@@ -9,13 +9,27 @@ import { scrapeJobDescription } from './services/scraper.js';
 
 const PORT = Number(process.env.PORT) || 3001;
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || 'http://localhost:5173';
+
+/** Allowed CORS origins: FRONTEND_ORIGIN (comma-separated) and optional FRONTEND_ORIGIN_PREVIEW. */
+const ALLOWED_ORIGINS = [
+  ...(process.env.FRONTEND_ORIGIN || 'http://localhost:5173')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean),
+  ...(process.env.FRONTEND_ORIGIN_PREVIEW
+    ? [process.env.FRONTEND_ORIGIN_PREVIEW.trim()].filter(Boolean)
+    : []),
+];
 
 const app = express();
 app.use(express.json({ limit: '2mb' }));
 app.use(
   cors({
-    origin: FRONTEND_ORIGIN,
+    origin: (origin, cb) => {
+      if (origin && ALLOWED_ORIGINS.includes(origin)) return cb(null, origin);
+      if (!origin) return cb(null, true); // same-origin or non-browser
+      return cb(null, false);
+    },
     credentials: true,
   })
 );

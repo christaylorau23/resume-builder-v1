@@ -28,36 +28,57 @@ export interface PipelineResponse {
   suggestedFilename?: string;
 }
 
+const API_UNREACHABLE_MSG =
+  'Cannot reach API. Check that VITE_API_URL is set and FRONTEND_ORIGIN on the server matches this site\'s URL.';
+
+function normalizeFetchError(err: unknown): Error {
+  if (err instanceof Error) {
+    if (err.message === 'Failed to fetch' || (err.name === 'TypeError' && err.message.includes('fetch'))) {
+      return new Error(API_UNREACHABLE_MSG);
+    }
+    return err;
+  }
+  return new Error(String(err));
+}
+
 /**
  * Call POST /api/scrape-jd to scrape job description from a URL. Requires VITE_API_URL and server FIRECRAWL_API_KEY.
  */
 export async function callScrapeJd(url: string): Promise<{ markdown: string }> {
-  const res = await fetch(`${getApiBaseUrl()}/api/scrape-jd`, {
-    method: 'POST',
-    headers: buildPipelineHeaders(),
-    credentials: 'include',
-    body: JSON.stringify({ url }),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: 'Scrape request failed' }));
-    throw new Error((err as { message?: string }).message || `HTTP ${res.status}`);
+  try {
+    const res = await fetch(`${getApiBaseUrl()}/api/scrape-jd`, {
+      method: 'POST',
+      headers: buildPipelineHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ url }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Scrape request failed' }));
+      throw new Error((err as { message?: string }).message || `HTTP ${res.status}`);
+    }
+    return res.json();
+  } catch (err) {
+    throw normalizeFetchError(err);
   }
-  return res.json();
 }
 
 /**
  * Call POST /api/run-pipeline. Requires VITE_API_URL to be set.
  */
 export async function callRunPipeline(body: Record<string, unknown>): Promise<PipelineResponse> {
-  const res = await fetch(`${getApiBaseUrl()}/api/run-pipeline`, {
-    method: 'POST',
-    headers: buildPipelineHeaders(),
-    credentials: 'include',
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ message: 'Pipeline request failed' }));
-    throw new Error((err as { message?: string }).message || `HTTP ${res.status}`);
+  try {
+    const res = await fetch(`${getApiBaseUrl()}/api/run-pipeline`, {
+      method: 'POST',
+      headers: buildPipelineHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ message: 'Pipeline request failed' }));
+      throw new Error((err as { message?: string }).message || `HTTP ${res.status}`);
+    }
+    return res.json();
+  } catch (err) {
+    throw normalizeFetchError(err);
   }
-  return res.json();
 }
