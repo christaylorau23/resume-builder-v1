@@ -11,7 +11,9 @@ COPY packages/types/package.json       ./packages/types/
 COPY packages/core/package.json        ./packages/core/
 COPY packages/eslint-config/package.json  ./packages/eslint-config/
 COPY packages/typescript-config/package.json ./packages/typescript-config/
+COPY packages/ui/package.json          ./packages/ui/
 COPY apps/api/package.json             ./apps/api/
+COPY apps/web/package.json             ./apps/web/
 
 # Install all workspace deps (Puppeteer skips Chromium on Railway)
 ENV PUPPETEER_SKIP_DOWNLOAD=true
