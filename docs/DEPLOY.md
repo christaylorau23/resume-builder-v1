@@ -13,9 +13,11 @@ Follow these steps in order. All work is done in the Railway and Vercel dashboar
    - `ANTHROPIC_API_KEY` = your Anthropic API key
    - `FIRECRAWL_API_KEY` = your Firecrawl key (optional; only for Job URL scrape)
    - `FRONTEND_ORIGIN` = `https://PLACEHOLDER` (you’ll replace this after step 2)
+   - `PUPPETEER_SKIP_DOWNLOAD` = `true`
+   - `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD` = `true`
 7. Deploy and wait until the service is up. Copy the **public URL** (e.g. `https://your-app.up.railway.app`) — this is your **Railway API URL**.
 
-**If the build fails:** Check the build logs. Ensure Root Directory is not set to `apps/api` (it must be repo root). The repo includes `nixpacks.toml` so Nixpacks uses Node 20 and pnpm; if you see “pnpm: command not found”, the install phase may need to run from repo root.
+**If the build fails:** Check the build logs. Ensure Root Directory is not set to `apps/api` (it must be repo root). The repo uses Node 20 and installs pnpm via npm (not Corepack) to avoid signature errors; if you see “pnpm: command not found”, the install phase may need to run from repo root.
 
 ## 2. Deploy Web on Vercel
 

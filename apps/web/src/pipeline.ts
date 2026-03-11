@@ -68,7 +68,7 @@ export function attachPipelineListeners(root: Document | DocumentFragment | Elem
   if (!runBtn || !inputEl || !statusEl || !resultsEl) return;
 
   if (!apiBase) {
-    runBtn.disabled = true;
+    runBtn!.disabled = true;
     if (apiHint) apiHint.style.display = 'block';
   }
 
@@ -99,14 +99,14 @@ export function attachPipelineListeners(root: Document | DocumentFragment | Elem
     if (previewTextEl) previewTextEl.textContent = text.slice(0, 3000) + (text.length > 3000 ? '\n…[truncated for display]' : '');
     if (previewEl) previewEl.style.display = 'block';
     if (urlWrap) urlWrap.style.display = 'none';
-    runBtn.style.display = 'none';
+    runBtn!.style.display = 'none';
   }
 
   function resetUrlTab(): void {
     scrapedJd = null;
     if (previewEl) previewEl.style.display = 'none';
     if (urlWrap) urlWrap.style.display = 'block';
-    runBtn.style.display = '';
+    runBtn!.style.display = '';
     setUrlError('');
     if (urlInputEl) urlInputEl.value = '';
   }
@@ -115,14 +115,14 @@ export function attachPipelineListeners(root: Document | DocumentFragment | Elem
     currentMode = mode;
     scrapedJd = null;
     if (previewEl) previewEl.style.display = 'none';
-    runBtn.style.display = '';
+    runBtn!.style.display = '';
     if (textareaWrap) textareaWrap.style.display = mode === 'url' ? 'none' : 'block';
     if (urlWrap) urlWrap.style.display = mode === 'url' ? 'block' : 'none';
     if (mode !== 'url' && inputEl) {
       inputEl.placeholder = placeholders[mode];
       inputEl.classList.toggle('pipeline-textarea-json', mode === 'json');
     }
-    runBtn.textContent = mode === 'url' ? 'Fetch & Preview' : 'Generate Resume';
+    runBtn!.textContent = mode === 'url' ? 'Fetch & Preview' : 'Generate Resume';
     setUrlError('');
   }
 
@@ -131,13 +131,13 @@ export function attachPipelineListeners(root: Document | DocumentFragment | Elem
     const val = urlInputEl.value.trim();
     if (!val) {
       setUrlError('');
-      runBtn.disabled = false;
+      runBtn!.disabled = false;
     } else if (!isValidHttpUrl(val)) {
       setUrlError('Enter a valid http:// or https:// URL.');
-      runBtn.disabled = true;
+      runBtn!.disabled = true;
     } else {
       setUrlError('');
-      runBtn.disabled = false;
+      runBtn!.disabled = false;
     }
   });
 
@@ -164,7 +164,7 @@ export function attachPipelineListeners(root: Document | DocumentFragment | Elem
   retryBtn?.addEventListener('click', () => {
     resetUrlTab();
     setStatus('', false);
-    resultsEl.style.display = 'none';
+    resultsEl!.style.display = 'none';
   });
 
   root.querySelectorAll('.pipeline-tab[data-mode]').forEach((tab) => {
@@ -184,12 +184,12 @@ export function attachPipelineListeners(root: Document | DocumentFragment | Elem
   });
 
   function setStatus(text: string, isError: boolean): void {
-    statusEl.textContent = text;
-    statusEl.className = 'pipeline-status' + (isError ? ' pipeline-error' : '');
+    statusEl!.textContent = text;
+    statusEl!.className = 'pipeline-status' + (isError ? ' pipeline-error' : '');
   }
 
   function showResults(data: PipelineResponse): void {
-    resultsEl.style.display = 'block';
+    resultsEl!.style.display = 'block';
 
     const pdfLinksEl = root.querySelector('#pipeline-pdf-links') as HTMLElement | null;
     if (pdfLinksEl) {
@@ -239,7 +239,7 @@ export function attachPipelineListeners(root: Document | DocumentFragment | Elem
     }
   }
 
-  runBtn.addEventListener('click', async () => {
+  runBtn!.addEventListener('click', async () => {
     if (!apiBase) {
       setStatus('API URL not configured (VITE_API_URL).', true);
       return;
@@ -255,7 +255,7 @@ export function attachPipelineListeners(root: Document | DocumentFragment | Elem
         setUrlError('Enter a valid http:// or https:// URL.');
         return;
       }
-      runBtn.disabled = true;
+      runBtn!.disabled = true;
       setStatus('Fetching job description…', false);
       try {
         const { markdown } = await callScrapeJd(url);
@@ -264,7 +264,7 @@ export function attachPipelineListeners(root: Document | DocumentFragment | Elem
       } catch (err) {
         setStatus(err instanceof Error ? err.message : 'Fetch failed.', true);
       } finally {
-        runBtn.disabled = false;
+        runBtn!.disabled = false;
       }
       return;
     }
@@ -275,7 +275,7 @@ export function attachPipelineListeners(root: Document | DocumentFragment | Elem
       return;
     }
 
-    runBtn.disabled = true;
+    runBtn!.disabled = true;
     setStatus('Generating…', false);
 
     let body: Record<string, unknown>;
@@ -287,7 +287,7 @@ export function attachPipelineListeners(root: Document | DocumentFragment | Elem
         body = { structuredResume: parsed, profile: buildPipelineProfile() };
       } catch {
         setStatus('Invalid JSON. Check the resume structure.', true);
-        runBtn.disabled = false;
+        runBtn!.disabled = false;
         return;
       }
     }
@@ -298,9 +298,9 @@ export function attachPipelineListeners(root: Document | DocumentFragment | Elem
       showResults(data);
     } catch (err) {
       setStatus(err instanceof Error ? err.message : 'Pipeline failed.', true);
-      resultsEl.style.display = 'none';
+      resultsEl!.style.display = 'none';
     } finally {
-      runBtn.disabled = false;
+      runBtn!.disabled = false;
     }
   });
 }
