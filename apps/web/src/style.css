@@ -27,7 +27,9 @@ a:hover {
 body {
   margin: 0;
   display: flex;
-  place-items: center;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
   min-width: 320px;
   min-height: 100vh;
 }
@@ -310,6 +312,38 @@ button:hover {
 button:focus,
 button:focus-visible {
   outline: 4px auto -webkit-focus-ring-color;
+}
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: 1.8em;
+  }
+
+  #app {
+    padding: 1rem;
+  }
+
+  .logo {
+    height: 3em;
+    padding: 0.5em;
+  }
+
+  .settings input[type="password"] {
+    max-width: 100%;
+  }
+
+  button {
+    min-height: 44px;
+  }
+
+  .pipeline textarea.pipeline-textarea {
+    min-height: 160px;
+    font-size: 16px; /* prevents iOS auto-zoom on focus */
+  }
+
+  .pipeline input.pipeline-url-input {
+    font-size: 16px; /* prevents iOS auto-zoom on focus */
+  }
 }
 
 @media (prefers-color-scheme: light) {

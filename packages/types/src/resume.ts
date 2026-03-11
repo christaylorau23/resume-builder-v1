@@ -33,6 +33,12 @@ export interface StructuredResume {
   };
   /** One-line professional headline (e.g. "Senior Software Engineer"). */
   headline: string;
+  /**
+   * Target role derived from the JD (e.g. "Head of Content Strategy").
+   * When present, renderers display this instead of `headline` at the top of the resume.
+   * Job history titles remain unchanged — only the top-level role label is overwritten.
+   */
+  targetRole?: string;
   /** Professional summary paragraph. */
   summary: string;
   experience: ExperienceEntry[];

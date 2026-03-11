@@ -37,7 +37,7 @@ function drawRule(doc: PDFDoc): void {
     .moveTo(x, y)
     .lineTo(PAGE_WIDTH_PT - MARGIN_PT, y)
     .lineWidth(0.5)
-    .strokeColor('#888888')
+    .strokeColor('#444444')
     .stroke();
   doc.moveDown(0.3);
 }
@@ -140,17 +140,18 @@ function renderResume(doc: PDFDoc, resume: StructuredResume): void {
   if (contactParts.length > 0) {
     headerSect.add(
       doc.struct('P', {}, () => {
-        doc.fontSize(9).font('Helvetica').fillColor('#333333');
+        doc.fontSize(10).font('Helvetica').fillColor('#333333');
         doc.text(contactParts.join('  |  '), { align: 'center', lineGap });
       }),
     );
   }
 
-  if (resume.headline) {
+  const displayRole = resume.targetRole ?? resume.headline;
+  if (displayRole) {
     headerSect.add(
       doc.struct('P', {}, () => {
         doc.fontSize(11).font('Helvetica-Oblique').fillColor('#000000');
-        doc.text(resume.headline, { align: 'center', lineGap });
+        doc.text(displayRole, { align: 'center', lineGap });
       }),
     );
   }

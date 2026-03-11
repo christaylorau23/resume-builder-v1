@@ -25,6 +25,7 @@ export interface PipelineResponse {
     keywordHeatmap?: { score: number; present: string[]; missing: string[] };
   };
   warnings: { code: string; message: string }[];
+  suggestedFilename?: string;
 }
 
 /**

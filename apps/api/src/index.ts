@@ -55,6 +55,7 @@ app.post('/api/run-pipeline', async (req, res) => {
       visualPdf: result.visualPdf?.toString('base64'),
       layoutPrep: result.layoutPrep,
       warnings: result.warnings,
+      suggestedFilename: result.suggestedFilename,
     });
   } catch (err) {
     const code = (err as { code?: string }).code;

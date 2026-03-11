@@ -108,7 +108,26 @@ export async function runPipeline(
     }
   }
 
-  return _makePipelineResult(pdfBuffer, layoutPrep, warnings, visualPdfBuffer);
+  const suggestedFilename = buildSuggestedFilename(constraintResult.resume);
+
+  return _makePipelineResult(pdfBuffer, layoutPrep, warnings, visualPdfBuffer, suggestedFilename);
+}
+
+/** Derive a safe download filename from the resume's target role and most recent employer. */
+function buildSuggestedFilename(resume: StructuredResume): string {
+  const slugify = (s: string, maxLen: number) =>
+    s
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, maxLen);
+
+  const role = slugify(resume.targetRole ?? resume.headline, 40) || 'resume';
+  const company = resume.experience[0]?.company
+    ? slugify(resume.experience[0].company, 30)
+    : 'resume';
+
+  return `${company}_${role}_Resume.pdf`;
 }
 
 /** @internal Exported for testing the result shape contract only. */
@@ -116,7 +135,14 @@ export function _makePipelineResult(
   pdf: Buffer,
   layoutPrep: LayoutPrepMetadata,
   warnings: PipelineResult['warnings'] = [],
-  visualPdf?: Buffer
+  visualPdf?: Buffer,
+  suggestedFilename?: string,
 ): PipelineResult {
-  return { pdf, layoutPrep, warnings, ...(visualPdf !== undefined && { visualPdf }) };
+  return {
+    pdf,
+    layoutPrep,
+    warnings,
+    ...(visualPdf !== undefined && { visualPdf }),
+    ...(suggestedFilename !== undefined && { suggestedFilename }),
+  };
 }

@@ -20,7 +20,8 @@
     "@anthropic-ai/sdk": "^0.78.0",
     "@repo/types": "workspace:*",
     "pdfkit": "^0.17.2",
-    "puppeteer": "^22.15.0"
+    "puppeteer": "^22.15.0",
+    "zod": "^3.22.0"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",

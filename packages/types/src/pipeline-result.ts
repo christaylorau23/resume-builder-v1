@@ -65,6 +65,11 @@ export interface PipelineResult {
   visualPdf?: Buffer;
   /** Non-fatal issues (e.g. VISUAL_PDF_FAILED). Failure goes here, never blocks pdf. */
   warnings: PipelineWarning[];
+  /**
+   * Suggested download filename derived from the target role and most recent employer.
+   * Format: `${company}_${role}_Resume.pdf` (e.g. "sky-media_head-of-content-strategy_Resume.pdf").
+   */
+  suggestedFilename?: string;
 }
 
 /**

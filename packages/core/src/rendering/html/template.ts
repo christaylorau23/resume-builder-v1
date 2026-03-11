@@ -77,20 +77,20 @@ export function buildHtmlResume(resume: StructuredResume, pillars: IdentityPilla
     line-height: 1.5;
     color: #111;
     background: #fff;
-    padding: 18mm 18mm 18mm 18mm;
+    padding: 20mm 20mm 20mm 20mm;
     width: 210mm;
     min-height: 297mm;
     margin: 0 auto;
   }
 
   @media print {
-    body { padding: 18mm 18mm 18mm 18mm; }
+    body { padding: 20mm 20mm 20mm 20mm; }
   }
 
   /* ── Header ──────────────────────────────────────── */
   .resume-name {
     font-family: 'Georgia', serif;
-    font-size: 22pt;
+    font-size: 18pt;
     font-weight: bold;
     letter-spacing: 0.01em;
     color: #111;
@@ -107,14 +107,14 @@ export function buildHtmlResume(resume: StructuredResume, pillars: IdentityPilla
 
   .resume-contact {
     font-family: system-ui, -apple-system, 'Helvetica Neue', sans-serif;
-    font-size: 8.5pt;
+    font-size: 10pt;
     color: #555;
     margin-bottom: 11pt;
   }
 
   .header-rule {
     border: none;
-    border-top: 1.5px solid #111;
+    border-top: 0.75px solid #555;
     margin-bottom: 13pt;
   }
 
@@ -126,9 +126,9 @@ export function buildHtmlResume(resume: StructuredResume, pillars: IdentityPilla
 
   .section-label {
     font-family: system-ui, -apple-system, 'Helvetica Neue', sans-serif;
-    font-size: 7pt;
+    font-size: 9pt;
     font-weight: 700;
-    letter-spacing: 0.14em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: #111;
     padding-bottom: 3pt;
@@ -183,7 +183,7 @@ export function buildHtmlResume(resume: StructuredResume, pillars: IdentityPilla
     font-size: 10pt;
     line-height: 1.5;
     color: #222;
-    margin-bottom: 2pt;
+    margin-bottom: 3pt;
   }
 
   /* ── Education ─────────────────────────────────────── */
@@ -220,13 +220,13 @@ export function buildHtmlResume(resume: StructuredResume, pillars: IdentityPilla
     font-family: system-ui, -apple-system, 'Helvetica Neue', sans-serif;
     font-size: 10pt;
     color: #222;
-    line-height: 1.7;
+    line-height: 1.5;
   }
 </style>
 </head>
 <body>
   <div class="resume-name">${name}</div>
-  <div class="resume-headline">${esc(resume.headline)}</div>
+  <div class="resume-headline">${esc(resume.targetRole ?? resume.headline)}</div>
   <div class="resume-contact">${contact}</div>
   <hr class="header-rule" />
 

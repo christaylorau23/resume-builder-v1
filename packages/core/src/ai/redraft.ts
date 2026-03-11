@@ -12,8 +12,10 @@
  *   REDRAFT_PARSE_FAILED   — response was not valid StructuredResume JSON
  */
 import Anthropic from '@anthropic-ai/sdk';
+import { ZodError } from 'zod';
 import type { IdentityPillars, StructuredResume } from '@repo/types';
 import type { TieredKeyword } from '../layout-prep/keyword-heatmap';
+import { StructuredResumeSchema } from './schema';
 
 const MODEL = 'claude-sonnet-4-6';
 
@@ -87,10 +89,11 @@ interface StructuredResume {
     location?: string;
   };
   headline: string;           // one-line professional title (e.g. "Senior Product Manager")
+  targetRole: string;         // the exact role title from the JD (e.g. "Head of Content Strategy") — displayed as the resume header role. Must match the seniority and title family of the JD.
   summary: string;            // 2–4 sentence professional summary paragraph
   experience: Array<{
-    title: string;
-    company: string;
+    title: string;            // FACTUAL job title — do NOT alter this. Use exactly as provided.
+    company: string;          // FACTUAL company name — do NOT alter this. Use exactly as provided.
     location?: string;
     startDate: string;        // format: "YYYY-MM" or "Month YYYY"
     endDate?: string;         // "Present" or "YYYY-MM"
@@ -193,88 +196,30 @@ export async function redraftResume(
     );
   }
 
-  const resume = validateStructuredResume(parsed, pillars);
-  return resume;
-}
-
-/**
- * Validate parsed JSON is a StructuredResume and enforce identity pillar values.
- * Throws RedraftError with REDRAFT_PARSE_FAILED if the shape is wrong.
- */
-function validateStructuredResume(parsed: unknown, pillars: IdentityPillars): StructuredResume {
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-    throw new RedraftError('REDRAFT_PARSE_FAILED', 'Response JSON is not an object.');
+  let resume: StructuredResume;
+  try {
+    const validated = StructuredResumeSchema.parse(parsed);
+    // Enforce identity pillars — override whatever the model returned
+    resume = {
+      ...validated,
+      name: pillars.name,
+      contact: {
+        ...validated.contact,
+        email: pillars.email,
+        phone: pillars.phone,
+      },
+    };
+  } catch (err) {
+    if (err instanceof ZodError) {
+      const issues = err.errors.map((e) => `${e.path.join('.')}: ${e.message}`).join('; ');
+      throw new RedraftError(
+        'REDRAFT_PARSE_FAILED',
+        `AI output failed schema validation: ${issues}`,
+        err,
+      );
+    }
+    throw err;
   }
-
-  const obj = parsed as Record<string, unknown>;
-
-  if (typeof obj.name !== 'string' || !obj.name) {
-    throw new RedraftError('REDRAFT_PARSE_FAILED', 'Missing or invalid field: name');
-  }
-  if (typeof obj.headline !== 'string' || !obj.headline) {
-    throw new RedraftError('REDRAFT_PARSE_FAILED', 'Missing or invalid field: headline');
-  }
-  if (typeof obj.summary !== 'string' || !obj.summary) {
-    throw new RedraftError('REDRAFT_PARSE_FAILED', 'Missing or invalid field: summary');
-  }
-  if (!Array.isArray(obj.experience)) {
-    throw new RedraftError('REDRAFT_PARSE_FAILED', 'Missing or invalid field: experience');
-  }
-  if (!Array.isArray(obj.education)) {
-    throw new RedraftError('REDRAFT_PARSE_FAILED', 'Missing or invalid field: education');
-  }
-  if (!Array.isArray(obj.skills)) {
-    throw new RedraftError('REDRAFT_PARSE_FAILED', 'Missing or invalid field: skills');
-  }
-
-  const contact =
-    typeof obj.contact === 'object' && obj.contact !== null
-      ? (obj.contact as Record<string, unknown>)
-      : {};
-
-  // Enforce identity pillars — override whatever the model returned
-  const resume: StructuredResume = {
-    name: pillars.name,
-    contact: {
-      email: pillars.email,
-      phone: pillars.phone,
-      ...(typeof contact.linkedin === 'string' && { linkedin: contact.linkedin }),
-      ...(typeof contact.location === 'string' && { location: contact.location }),
-    },
-    headline: obj.headline as string,
-    summary: obj.summary as string,
-    experience: (obj.experience as unknown[]).map((e, i) => {
-      const entry = e as Record<string, unknown>;
-      if (typeof entry.title !== 'string' || typeof entry.company !== 'string') {
-        throw new RedraftError(
-          'REDRAFT_PARSE_FAILED',
-          `experience[${i}] missing title or company`,
-        );
-      }
-      return {
-        title: entry.title,
-        company: entry.company,
-        ...(typeof entry.location === 'string' && { location: entry.location }),
-        startDate: typeof entry.startDate === 'string' ? entry.startDate : '',
-        ...(typeof entry.endDate === 'string' && { endDate: entry.endDate }),
-        bullets: Array.isArray(entry.bullets)
-          ? (entry.bullets as unknown[]).filter((b) => typeof b === 'string')
-          : [],
-      };
-    }),
-    education: (obj.education as unknown[]).map((e) => {
-      const entry = e as Record<string, unknown>;
-      return {
-        degree: typeof entry.degree === 'string' ? entry.degree : '',
-        institution: typeof entry.institution === 'string' ? entry.institution : '',
-        ...(typeof entry.location === 'string' && { location: entry.location }),
-        ...(typeof entry.graduationDate === 'string' && {
-          graduationDate: entry.graduationDate,
-        }),
-      };
-    }),
-    skills: (obj.skills as unknown[]).filter((s) => typeof s === 'string') as string[],
-  };
 
   return resume;
 }

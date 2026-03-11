@@ -194,8 +194,9 @@ export function attachPipelineListeners(root: Document | DocumentFragment | Elem
     const pdfLinksEl = root.querySelector('#pipeline-pdf-links') as HTMLElement | null;
     if (pdfLinksEl) {
       const url = base64ToBlobUrl(data.pdf, 'application/pdf');
+      const atsFilename = data.suggestedFilename ?? 'resume-ats.pdf';
       pdfLinksEl.innerHTML = `
-        <a href="${url}" download="resume-ats.pdf">Download ATS PDF</a>
+        <a href="${url}" download="${atsFilename}">Download ATS PDF</a>
         <span class="pipeline-result-sep">·</span>
         <a href="${url}" target="_blank" rel="noopener">Open ATS PDF</a>
       `;
@@ -215,8 +216,11 @@ export function attachPipelineListeners(root: Document | DocumentFragment | Elem
     if (visualPdfEl) {
       if (data.visualPdf) {
         const vUrl = base64ToBlobUrl(data.visualPdf, 'application/pdf');
+        const visualFilename = data.suggestedFilename
+          ? data.suggestedFilename.replace('_Resume.pdf', '_Visual_Resume.pdf')
+          : 'resume-visual.pdf';
         visualPdfEl.innerHTML = `
-          <a href="${vUrl}" download="resume-visual.pdf">Download Visual PDF</a>
+          <a href="${vUrl}" download="${visualFilename}">Download Visual PDF</a>
           <span class="pipeline-result-sep">·</span>
           <a href="${vUrl}" target="_blank" rel="noopener">Open Visual PDF</a>
         `;
