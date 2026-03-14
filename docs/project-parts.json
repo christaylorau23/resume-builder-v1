@@ -1,0 +1,28 @@
+{
+  "repository_type": "monorepo",
+  "parts_count": 3,
+  "parts": [
+    {
+      "part_id": "api",
+      "project_type_id": "backend",
+      "display_name": "API",
+      "root_path": "apps/api",
+      "purpose": "Express API server; resume pipeline, scraping, AI redraft"
+    },
+    {
+      "part_id": "web",
+      "project_type_id": "web",
+      "display_name": "Web",
+      "root_path": "apps/web",
+      "purpose": "Vite frontend; resume builder UI"
+    },
+    {
+      "part_id": "cli",
+      "project_type_id": "cli",
+      "display_name": "CLI",
+      "root_path": "apps/cli",
+      "purpose": "Command-line interface; resume-builder binary"
+    }
+  ],
+  "shared_packages": ["packages/core", "packages/types", "packages/ui", "packages/eslint-config", "packages/typescript-config"]
+}

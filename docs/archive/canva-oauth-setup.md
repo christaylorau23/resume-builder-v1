@@ -1,3 +1,9 @@
+# Canva OAuth and token setup (archived)
+
+**Archived:** PDF-only MVP; Canva is out of scope. This doc is kept for reference only.
+
+---
+
 # Canva OAuth and token setup
 
 This doc describes how to obtain and use a Canva access token for the resume-builder pipeline (web app and CLI). Use the OAuth flow so the token is correctly scoped for the Canva Connect API and maps to your Canva identity.
@@ -43,7 +49,7 @@ CANVA_ACCESS_TOKEN=<paste the token here>
 
 ## Token refresh
 
-- **Session path:** If you use "Connect Canva" in the browser, the API refreshes the access token automatically when it’s near expiry (using the stored refresh token).
+- **Session path:** If you use "Connect Canva" in the browser, the API refreshes the access token automatically when it's near expiry (using the stored refresh token).
 - **Env path:** Tokens in `.env` do not auto-refresh. When the token expires, run the OAuth flow again (steps 1–4) to get a new token and update `CANVA_ACCESS_TOKEN`.
 
 Always use this OAuth flow to obtain or refresh the token; do not use manual API keys. That keeps the token correctly scoped and tied to your Canva identity.

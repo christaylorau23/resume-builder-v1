@@ -1,37 +1,40 @@
-# Deploy API (Railway) and Web (Vercel)
+# Deploy API and Web (Vercel)
 
-Follow these steps in order. All work is done in the Railway and Vercel dashboards.
+Follow these steps in order. All work is done in the Vercel dashboard (and your API host if different).
 
-## 1. Deploy API on Railway
+## 1. Deploy API
 
-1. Go to [Railway](https://railway.app) → **New Project** → **Deploy from GitHub repo**.
-2. Select `christaylorau23/resume-builder-v1`, branch `feature/current-work` (or your target branch).
-3. Create **one** service for the API (do not add a separate service for the web app; the web app goes on Vercel in step 2).
-4. For the API service, ensure **Root Directory** is **empty** (repo root). In Railway: service → **Settings** → **Root Directory** → leave blank so the build runs from the monorepo root where `pnpm-workspace.yaml` and `railway.toml` live.
-5. Railway uses `railway.toml` and `nixpacks.toml`: Node 20, pnpm, then `pnpm --filter api build` / `pnpm --filter api start`.
-6. In the service **Variables** (or **Settings → Environment**), set:
-   - `ANTHROPIC_API_KEY` = your Anthropic API key
-   - `FIRECRAWL_API_KEY` = your Firecrawl key (optional; only for Job URL scrape)
-   - `FRONTEND_ORIGIN` = `https://PLACEHOLDER` (you’ll replace this after step 2)
-   - `PUPPETEER_SKIP_DOWNLOAD` = `true`
-   - `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD` = `true`
-7. Deploy and wait until the service is up. Copy the **public URL** (e.g. `https://your-app.up.railway.app`) — this is your **Railway API URL**.
+Deploy the API to any Node host (e.g. Vercel serverless, a VPS, or another provider). From the repo root:
 
-**If the build fails:** Check the build logs. Ensure Root Directory is not set to `apps/api` (it must be repo root). The repo uses Node 20 and installs pnpm via npm (not Corepack) to avoid signature errors; if you see “pnpm: command not found”, the install phase may need to run from repo root.
+- **Build:** `pnpm --filter api build`
+- **Start:** `node apps/api/dist/index.js` (or `pnpm --filter api start`)
+- **Root:** Use the monorepo root so `pnpm-workspace.yaml` and workspace dependencies resolve.
+
+Set these **environment variables** on your API service:
+
+- `ANTHROPIC_API_KEY` = your Anthropic API key
+- `FIRECRAWL_API_KEY` = your Firecrawl key (optional; only for Job URL scrape)
+- `FRONTEND_ORIGIN` = `https://PLACEHOLDER` (replace after step 2 with your web app origin)
+- `PUPPETEER_SKIP_DOWNLOAD` = `true`
+- `PUPPETEER_SKIP_CHROMIUM_DOWNLOAD` = `true`
+
+Deploy and note the **public API URL** (e.g. `https://your-api.example.com`).
+
+**Docker:** You can use the repo’s root `Dockerfile` to build and run the API in a container.
 
 ## 2. Deploy Web on Vercel
 
-1. Go to [Vercel](https://vercel.com) → **Add New → Project** → **Import** the same GitHub repo, branch `feature/current-work`.
+1. Go to [Vercel](https://vercel.com) → **Add New → Project** → **Import** your GitHub repo and branch.
 2. Vercel uses `vercel.json`: `pnpm --filter web build`, output `apps/web/dist`.
 3. In **Environment Variables**, set:
-   - `VITE_API_URL` = the **Railway API URL** from step 1 (e.g. `https://your-app.up.railway.app`)
+   - `VITE_API_URL` = your **API URL** from step 1 (e.g. `https://your-api.example.com`)
 4. Deploy. Copy the **Vercel URL** (e.g. `https://resume-builder-xxx.vercel.app`).
 
 ## 3. Point API at the frontend (CORS)
 
-1. Back in **Railway** → same service → **Variables**.
+1. On your **API host** → **Variables** (or **Environment**).
 2. Set `FRONTEND_ORIGIN` = the **Vercel URL** from step 2 (exact origin, e.g. `https://resume-builder-xxx.vercel.app`). To allow multiple URLs (e.g. production and preview), use a comma-separated list or set `FRONTEND_ORIGIN_PREVIEW` to the preview URL.
-3. Save; Railway will redeploy. The web app can then call the API without CORS errors.
+3. Save and redeploy the API if needed. The web app can then call the API without CORS errors.
 
 ## 4. Verify
 
